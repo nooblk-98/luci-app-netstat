@@ -1,0 +1,88 @@
+.stats-grid {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.stats-card,
+.ip-card {
+  background-color: rgba(50, 50, 50, 0.5); 
+  border-radius: 2px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #ddd;                
+}
+
+.stat-icon {
+  height: 28px;
+  margin-bottom: 8px;
+  filter: brightness(0.8) invert(1); 
+}
+
+.stat-label {
+  margin-bottom: 4px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 10px;
+  color: #ccc;
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #eee;
+}
+
+.stat-number {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: #fff;
+}
+
+.stat-unit {
+  font-size: 0.7em;
+  opacity: 0.6;
+  margin-left: 3px;
+  color: #aaa;
+}
+
+.ip-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ip-value {
+  font-weight: bold;
+  color: #fff;
+}
+
+.eye-icon {
+  cursor: pointer;
+  margin-left: 8px;
+  height: 20px;
+  filter: brightness(0.8) invert(1); 
+}
+
+.ip-org {
+  font-size: 0.9em;
+  color: #999;
+}
+
+.wan-text {
+  font-size: 10px !important;
+  color: #bbb !important;
+}

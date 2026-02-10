@@ -1,0 +1,44 @@
+#!/bin/sh
+
+chmod 644 /www/luci-static/resources/netstat/chart.js
+
+RESTART_VNSTAT=0
+
+if opkg list-installed | grep -q '^vnstat2'; then
+    opkg remove vnstat2 && RESTART_VNSTAT=1
+fi
+
+if ! command -v vnstat >/dev/null 2>&1; then
+    opkg update
+    opkg install vnstat || exit 1
+    RESTART_VNSTAT=1
+fi
+
+VNSTAT_BIN="vnstat"
+
+mkdir -p /etc/vnstat
+
+if [ -f /etc/vnstat.conf ]; then
+    if ! grep -q '^DatabaseDir "/etc/vnstat"' /etc/vnstat.conf; then
+        sed -i 's|^DatabaseDir .*|DatabaseDir "/etc/vnstat"|' /etc/vnstat.conf
+        RESTART_VNSTAT=1
+    fi
+fi
+
+IFACE="$(ip -4 route list 0/0 | awk '{print $5}' | head -n1)"
+[ -z "$IFACE" ] && IFACE="wwan0_1"
+
+if [ ! -f "/etc/vnstat/$IFACE" ]; then
+    $VNSTAT_BIN --create -i "$IFACE"
+    RESTART_VNSTAT=1
+fi
+
+if [ -f /etc/init.d/vnstat ]; then
+    /etc/init.d/vnstat enable
+    [ $RESTART_VNSTAT -eq 1 ] && /etc/init.d/vnstat restart || /etc/init.d/vnstat start
+fi
+
+CRONLINE="*/2 * * * * root $VNSTAT_BIN --update"
+grep -qF "$CRONLINE" /etc/crontabs/root || echo "$CRONLINE" >> /etc/crontabs/root
+
+exit 0
