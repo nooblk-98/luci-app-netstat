@@ -21,26 +21,44 @@ const CONFIG = {
 // Path mappings: local -> remote
 const PATH_MAPPINGS = [
   {
-    local: 'ucode\\template\\themes\\noobwrt',
-    remote: '/usr/share/ucode/luci/template/themes/noobwrt',
-    description: 'uCode templates'
+    local: 'files\\usr\\lib\\lua\\luci',
+    remote: '/usr/lib/lua/luci',
+    description: 'LuCI Lua modules (controller, model, view)'
   },
   {
-    local: 'htdocs\\luci-static\\noobwrt',
-    remote: '/www/luci-static/noobwrt',
-    description: 'NoobWrt static files'
+    local: 'files\\www\\luci-static\\resources\\netstat',
+    remote: '/www/luci-static/resources/netstat',
+    description: 'NetStat static resources (CSS, JS)'
   },
   {
-    local: 'htdocs\\luci-static\\resources\\menu-noobwrt.js',
-    remote: '/www/luci-static/resources/menu-noobwrt.js',
-    description: 'Menu NoobWrt JS',
+    local: 'files\\www\\luci-static\\resources\\view\\status\\include\\08_stats.js',
+    remote: '/www/luci-static/resources/view/status/include/08_stats.js',
+    description: 'NetStat status view include',
+    isFile: true
+  },
+  {
+    local: 'files\\etc\\config\\netstats',
+    remote: '/etc/config/netstats',
+    description: 'NetStat config file',
+    isFile: true
+  },
+  {
+    local: 'files\\etc\\config\\vnstat',
+    remote: '/etc/config/vnstat',
+    description: 'VNStat config file',
+    isFile: true
+  },
+  {
+    local: 'files\\etc\\uci-defaults\\99-vnstat',
+    remote: '/etc/uci-defaults/99-vnstat',
+    description: 'VNStat UCI defaults',
     isFile: true
   }
 ];
 
 const BASE_DIR = __dirname;
 
-class ThemeSync {
+class NetStatSync {
   constructor() {
     this.sftp = new SftpClient();
     this.ssh = new SSHClient();
@@ -341,16 +359,13 @@ class ThemeSync {
 
 // Main
 async function main() {
-  console.log('🚀 LuCI Theme Sync - Starting...\n');
+  console.log('🚀 NetStat Sync - Starting...\n');
 
-  const sync = new ThemeSync();
+  const sync = new NetStatSync();
   
   // Handle graceful shutdown
   process.on('SIGINT', () => sync.cleanup());
   process.on('SIGTERM', () => sync.cleanup());
-
-  // Watch LESS files and auto-compile
-  watchLessFiles();
 
   await sync.connect();
   
@@ -367,58 +382,6 @@ async function main() {
   } else {
     sync.startWatching();
   }
-}
-
-function watchLessFiles() {
-  const lessDir = path.join(BASE_DIR, 'less');
-  
-  console.log('🔍 Watching LESS files for auto-compilation...\n');
-  
-  const lessWatcher = chokidar.watch(lessDir, {
-    ignored: /(^|[\/\\])\../, 
-    persistent: true,
-    awaitWriteFinish: {
-      stabilityThreshold: 500,
-      pollInterval: 100
-    }
-  });
-
-  lessWatcher.on('change', (filePath) => {
-    const fileName = path.basename(filePath);
-    console.log(`📝 LESS file changed: ${fileName}`);
-    
-    try {
-      console.log('🔨 Compiling LESS to CSS...');
-      
-      if (fileName === 'cascade.less') {
-        execSync('npx lessc less/cascade.less htdocs/luci-static/noobwrt/css/cascade.css', { 
-          cwd: BASE_DIR,
-          stdio: 'pipe'
-        });
-        console.log('✅ Compiled: cascade.css');
-      } else if (fileName === 'dark.less') {
-        execSync('npx lessc less/dark.less htdocs/luci-static/noobwrt/css/dark.css', { 
-          cwd: BASE_DIR,
-          stdio: 'pipe'
-        });
-        console.log('✅ Compiled: dark.css');
-      } else {
-        // For other LESS files that are imports, compile all
-        execSync('npx lessc less/cascade.less htdocs/luci-static/noobwrt/css/cascade.css && npx lessc less/dark.less htdocs/luci-static/noobwrt/css/dark.css', { 
-          cwd: BASE_DIR,
-          stdio: 'pipe'
-        });
-        console.log('✅ Recompiled all CSS files');
-      }
-      console.log('✨ LESS compilation successful\n');
-    } catch (err) {
-      console.error('❌ LESS compilation failed:', err.message, '\n');
-    }
-  });
-
-  lessWatcher.on('error', (error) => {
-    console.error('❌ LESS Watcher error:', error.message);
-  });
 }
 
 main().catch(err => {
