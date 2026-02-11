@@ -11,7 +11,7 @@ function getNetdevStats()
     local f = io.open("/proc/net/dev", "r")
     if not f then
         luci.http.prepare_content("application/json")
-        luci.http.write('{"error": "Cannot read /proc/net/dev"}')
+        luci.http.write('{"stats":{}, "ip":"N/A", "status":"Disconnected"}')
         return
     end
     
@@ -35,6 +35,33 @@ function getNetdevStats()
         end
     end
     
+    -- Quick connectivity check - just check if we have packets flowing
+    local status = "Disconnected"
+    for iface, data in pairs(stats) do
+        if iface ~= "lo" and (data.rx > 0 or data.tx > 0) then
+            status = "Connected"
+            break
+        end
+    end
+    
+    -- Get public IP in background (non-blocking)
+    local ip = "N/A"
+    -- Try quick wget to ifconfig.me
+    local f_ip = io.popen("timeout 3 wget -qO- http://ifconfig.me 2>/dev/null")
+    if f_ip then
+        local ip_result = f_ip:read("*l")
+        if ip_result and ip_result ~= "" then
+            ip = ip_result
+        end
+        f_ip:close()
+    end
+    
+    local response = {
+        stats = stats,
+        ip = ip,
+        status = status
+    }
+    
     luci.http.prepare_content("application/json")
-    luci.http.write_json(stats)
+    luci.http.write_json(response)
 end
