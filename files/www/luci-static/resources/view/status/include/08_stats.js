@@ -11,18 +11,14 @@ let last_time = Date.now();
 	function isDarkMode() {
 		try {
 			const bgColor = getComputedStyle(document.body).backgroundColor;
-			console.log('[NetStat] Body bg color:', bgColor);
-			
 			if (!bgColor || bgColor === 'transparent') return false;
 			const rgb = bgColor.match(/\d+/g);
 			if (!rgb || rgb.length < 3) return false;
 			const [r, g, b] = rgb.map(Number);
 			const luminance = (r * 299 + g * 587 + b * 114) / 1000;
 			const isDark = luminance < 100;
-			console.log('[NetStat] RGB:', r, g, b, 'Luminance:', luminance, 'isDark:', isDark);
 			return isDark;
 		} catch (e) {
-			console.error('[NetStat] Error detecting dark mode:', e);
 			return false;
 		}
 	}
@@ -31,20 +27,15 @@ let last_time = Date.now();
 		const dark = isDarkMode();
 		const cssFile = dark ? 'netstat_dark.css' : 'netstat.css';
 		
-		console.log('[NetStat] loadCSS - current dark:', dark, 'last loaded:', lastLoadedCss);
-		
 		// Skip only if we just loaded this exact CSS
 		if (lastLoadedCss === cssFile) {
-			console.log('[NetStat] CSS already loaded, skipping');
 			return;
 		}
 		
-		console.log('[NetStat] Loading CSS:', cssFile);
 		lastLoadedCss = cssFile;
 
 		// Remove old CSS
 		document.querySelectorAll('link[href*="netstat.css"]').forEach(link => {
-			console.log('[NetStat] Removing old CSS:', link.href);
 			if (link.parentNode) link.parentNode.removeChild(link);
 		});
 
@@ -52,21 +43,11 @@ let last_time = Date.now();
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
 		link.href = '/luci-static/resources/netstat/' + cssFile + '?t=' + Date.now();
-		
-		link.onload = function() {
-			console.log('[NetStat] ✓ CSS loaded:', link.href);
-		};
-		link.onerror = function() {
-			console.error('[NetStat] ✗ CSS failed to load:', link.href);
-		};
-		
-		console.log('[NetStat] Adding link to head:', link.href);
 		document.head.appendChild(link);
 	}
 
 	// Initial load with short delay
 	setTimeout(() => {
-		console.log('[NetStat] Initial load');
 		loadCSS();
 	}, 100);
 
@@ -74,8 +55,6 @@ let last_time = Date.now();
 	setInterval(() => {
 		loadCSS();
 	}, 500);
-	
-	console.log('[NetStat] CSS loader initialized');
 })();
 
 function parseNetdev(raw) {
