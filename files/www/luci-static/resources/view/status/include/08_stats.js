@@ -6,31 +6,76 @@ let prev = {};
 let last_time = Date.now();
 
 (function loadDynamicCSS() {
+	let lastLoadedCss = null;
+
 	function isDarkMode() {
 		try {
 			const bgColor = getComputedStyle(document.body).backgroundColor;
-			if (!bgColor) return false;
+			console.log('[NetStat] Body bg color:', bgColor);
+			
+			if (!bgColor || bgColor === 'transparent') return false;
 			const rgb = bgColor.match(/\d+/g);
-			if (!rgb) return false;
+			if (!rgb || rgb.length < 3) return false;
 			const [r, g, b] = rgb.map(Number);
-			return (r * 299 + g * 587 + b * 114) / 1000 < 100;
+			const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+			const isDark = luminance < 100;
+			console.log('[NetStat] RGB:', r, g, b, 'Luminance:', luminance, 'isDark:', isDark);
+			return isDark;
 		} catch (e) {
-			console.error('Error detecting dark mode:', e);
+			console.error('[NetStat] Error detecting dark mode:', e);
 			return false;
 		}
 	}
 
-	try {
+	function loadCSS() {
 		const dark = isDarkMode();
+		const cssFile = dark ? 'netstat_dark.css' : 'netstat.css';
+		
+		console.log('[NetStat] loadCSS - current dark:', dark, 'last loaded:', lastLoadedCss);
+		
+		// Skip only if we just loaded this exact CSS
+		if (lastLoadedCss === cssFile) {
+			console.log('[NetStat] CSS already loaded, skipping');
+			return;
+		}
+		
+		console.log('[NetStat] Loading CSS:', cssFile);
+		lastLoadedCss = cssFile;
+
+		// Remove old CSS
+		document.querySelectorAll('link[href*="netstat.css"]').forEach(link => {
+			console.log('[NetStat] Removing old CSS:', link.href);
+			if (link.parentNode) link.parentNode.removeChild(link);
+		});
+
+		// Load new CSS
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
-		link.href = dark
-			? '/luci-static/resources/netstat/netstat_dark.css'
-			: '/luci-static/resources/netstat/netstat.css';
+		link.href = '/luci-static/resources/netstat/' + cssFile + '?t=' + Date.now();
+		
+		link.onload = function() {
+			console.log('[NetStat] ✓ CSS loaded:', link.href);
+		};
+		link.onerror = function() {
+			console.error('[NetStat] ✗ CSS failed to load:', link.href);
+		};
+		
+		console.log('[NetStat] Adding link to head:', link.href);
 		document.head.appendChild(link);
-	} catch (e) {
-		console.error('Error loading CSS:', e);
 	}
+
+	// Initial load with short delay
+	setTimeout(() => {
+		console.log('[NetStat] Initial load');
+		loadCSS();
+	}, 100);
+
+	// Poll every 500ms
+	setInterval(() => {
+		loadCSS();
+	}, 500);
+	
+	console.log('[NetStat] CSS loader initialized');
 })();
 
 function parseNetdev(raw) {
@@ -126,7 +171,7 @@ function createStatusCard(status, ip) {
 	const statusBg = isConnected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 82, 82, 0.1)';
 	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
 	
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
+	return E('div', { class: 'ip-card', style: 'display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
 		// Status and IP on same row
 		E('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;' }, [
 			// Status (left)
@@ -207,7 +252,7 @@ return baseclass.extend({
 		const txRate = formatRate(txSpeed * 8);
 
 		// Create container with better styling
-		const container = E('div', { style: 'display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8f9fa; box-sizing: border-box;' });
+		const container = E('div', { class: 'stats-grid', style: 'display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8f9fa; box-sizing: border-box;' });
 		
 		// Add header section
 		const header = E('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); gap: 10px; flex-wrap: wrap;' }, [
