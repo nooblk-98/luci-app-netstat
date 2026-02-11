@@ -126,19 +126,22 @@ function createStatusCard(status, ip) {
 	const statusBg = isConnected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 82, 82, 0.1)';
 	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
 	
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 16px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
-		// Status indicator (top)
-		E('div', { style: 'display: flex; flex-direction: column; gap: 10px;' }, [
-			E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('INTERNET STATUS')),
-			E('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
-				E('span', { style: 'width: 12px; height: 12px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;' }, []),
-				E('span', { style: 'font-weight: 700; font-size: 20px; color: ' + statusColor + ';' }, status)
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
+		// Status and IP on same row
+		E('div', { style: 'display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;' }, [
+			// Status (left)
+			E('div', { style: 'display: flex; flex-direction: column; gap: 8px;' }, [
+				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('INTERNET STATUS')),
+				E('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+					E('span', { style: 'width: 12px; height: 12px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;' }, []),
+					E('span', { style: 'font-weight: 700; font-size: 20px; color: ' + statusColor + ';' }, status)
+				])
+			]),
+			// IP (right)
+			E('div', { style: 'display: flex; flex-direction: column; gap: 8px; text-align: right;' }, [
+				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('PUBLIC IP')),
+				E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; font-family: monospace; text-shadow: 0 2px 6px rgba(0,0,0,0.12);' }, ip)
 			])
-		]),
-		// IP address (bottom)
-		E('div', { style: 'display: flex; flex-direction: column; gap: 8px;' }, [
-			E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('PUBLIC IP')),
-			E('span', { style: 'font-weight: 800; font-size: 28px; color: ' + statusColor + '; font-family: monospace; text-shadow: 0 2px 6px rgba(0,0,0,0.12); word-break: break-all;' }, ip)
 		])
 	]);
 }
