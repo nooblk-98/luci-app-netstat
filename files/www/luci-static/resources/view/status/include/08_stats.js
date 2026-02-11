@@ -132,7 +132,17 @@ function formatRate(bits) {
 	return { number: bits.toFixed(i > 0 ? 1 : 0), unit: units[i] + '/s' };
 }
 
-function createSpeedMeter(label, speed, unit, color, icon) {
+function formatBytes(bytes) {
+	const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+	let i = 0;
+	while (bytes >= 1024 && i < units.length - 1) {
+		bytes /= 1024;
+		i++;
+	}
+	return { number: bytes.toFixed(i > 0 ? 2 : 0), unit: units[i] };
+}
+
+function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabel) {
 	// Scale: 0 Mbps = 0%, 100 Mbps = 100%
 	let percentage = 0;
 	if (unit === 'Mbps/s') {
@@ -143,24 +153,40 @@ function createSpeedMeter(label, speed, unit, color, icon) {
 		percentage = Math.min(100, (parseFloat(speed) / 1000) * 100);
 	}
 
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + ';' }, [
-		// Label and bar section
-		E('div', { style: 'display: flex; flex-direction: column; gap: 10px;' }, [
-			E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px;' }, label),
+	const formattedTotal = formatBytes(totalBytes);
+
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 10px; padding: 16px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + ';' }, [
+		// Label
+		E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px; margin-bottom: 2px;' }, label),
+		
+		// Progress bar and total - horizontal layout
+		E('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+			// Progress bar
 			E('div', { 
-				style: 'width: 100%; height: 14px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 7px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
+				style: 'width: 300px; height: 12px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 6px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
 			}, [
 				E('div', { 
-					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 8px ' + color + '50;' 
+					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 6px ' + color + '50;' 
 				}, [])
+			]),
+			
+			// Vertical separator
+			E('div', { style: 'width: 2px; height: 30px; background: ' + color + '; border-radius: 1px; opacity: 0.3;' }),
+			
+			// Total with large text
+			E('div', { style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex-shrink: 0;' }, [
+				E('span', { style: 'font-size: 9px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px;' }, totalLabel),
+				E('div', { style: 'display: flex; align-items: baseline; gap: 4px;' }, [
+					E('span', { style: 'font-weight: 800; font-size: 38px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, formattedTotal.number),
+					E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, formattedTotal.unit)
+				])
 			])
 		]),
+		
 		// Speed number
-		E('div', { style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px;' }, [
-			E('div', { style: 'display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;' }, [
-				E('span', { style: 'font-weight: 800; font-size: 36px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.12); line-height: 1;' }, speed),
-				E('span', { style: 'font-size: 12px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
-			])
+		E('div', { style: 'display: flex; align-items: baseline; gap: 6px; margin-top: 4px;' }, [
+			E('span', { style: 'font-weight: 800; font-size: 38px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, speed),
+			E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
 		])
 	]);
 }
@@ -262,8 +288,8 @@ return baseclass.extend({
 		container.appendChild(header);
 		
 		// Add speed meters
-		container.appendChild(createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50'));
-		container.appendChild(createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3'));
+		container.appendChild(createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50', null, curr.rx, _('TOTAL DOWNLOAD')));
+		container.appendChild(createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3', null, curr.tx, _('TOTAL UPLOAD')));
 		
 		// Add internet status with IP
 		const status = data.status || 'Disconnected';
