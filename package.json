@@ -1,0 +1,31 @@
+{
+  "name": "luci-theme-sync",
+  "version": "1.0.0",
+  "description": "Watch and sync LuCI theme changes to router via SFTP",
+  "main": "watch-sync.js",
+  "scripts": {
+    "build": "lessc less/cascade.less htdocs/luci-static/argon/css/cascade.css && lessc less/dark.less htdocs/luci-static/argon/css/dark.css",
+    "watch:less": "nodemon --watch less --ext less --exec \"npm run build\"",
+    "sync": "node watch-sync.js",
+    "start": "concurrently \"npm run watch:less\" \"npm run sync\"",
+    "dev": "concurrently \"npm run watch:less\" \"npm run sync\""
+  },
+  "keywords": [
+    "luci",
+    "theme",
+    "sync",
+    "sftp",
+    "openwrt"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "ssh2-sftp-client": "^10.0.3"
+  },
+  "devDependencies": {
+    "less": "^4.2.0",
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,102 +1,106 @@
 'use strict';
 'require baseclass';
-'require fs';
+'require uci';
 
 let prev = {};
 let last_time = Date.now();
-let ipVisible = localStorage.getItem('ipVisible') !== 'false';
-let currentIface = '';
 
 (function loadDynamicCSS() {
+	let lastLoadedCss = null;
+
 	function isDarkMode() {
 		try {
 			const bgColor = getComputedStyle(document.body).backgroundColor;
-			if (!bgColor) return false;
+			console.log('[NetStat] Body bg color:', bgColor);
+			
+			if (!bgColor || bgColor === 'transparent') return false;
 			const rgb = bgColor.match(/\d+/g);
-			if (!rgb) return false;
+			if (!rgb || rgb.length < 3) return false;
 			const [r, g, b] = rgb.map(Number);
-			return (r * 299 + g * 587 + b * 114) / 1000 < 100;
+			const luminance = (r * 299 + g * 587 + b * 114) / 1000;
+			const isDark = luminance < 100;
+			console.log('[NetStat] RGB:', r, g, b, 'Luminance:', luminance, 'isDark:', isDark);
+			return isDark;
 		} catch (e) {
-			console.error('Error detecting dark mode:', e);
+			console.error('[NetStat] Error detecting dark mode:', e);
 			return false;
 		}
 	}
 
-	try {
+	function loadCSS() {
 		const dark = isDarkMode();
+		const cssFile = dark ? 'netstat_dark.css' : 'netstat.css';
+		
+		console.log('[NetStat] loadCSS - current dark:', dark, 'last loaded:', lastLoadedCss);
+		
+		// Skip only if we just loaded this exact CSS
+		if (lastLoadedCss === cssFile) {
+			console.log('[NetStat] CSS already loaded, skipping');
+			return;
+		}
+		
+		console.log('[NetStat] Loading CSS:', cssFile);
+		lastLoadedCss = cssFile;
+
+		// Remove old CSS
+		document.querySelectorAll('link[href*="netstat.css"]').forEach(link => {
+			console.log('[NetStat] Removing old CSS:', link.href);
+			if (link.parentNode) link.parentNode.removeChild(link);
+		});
+
+		// Load new CSS
 		const link = document.createElement('link');
 		link.rel = 'stylesheet';
-		link.href = dark
-			? '/luci-static/resources/netstat/netstat_dark.css'
-			: '/luci-static/resources/netstat/netstat.css';
+		link.href = '/luci-static/resources/netstat/' + cssFile + '?t=' + Date.now();
+		
+		link.onload = function() {
+			console.log('[NetStat] ✓ CSS loaded:', link.href);
+		};
+		link.onerror = function() {
+			console.error('[NetStat] ✗ CSS failed to load:', link.href);
+		};
+		
+		console.log('[NetStat] Adding link to head:', link.href);
 		document.head.appendChild(link);
-	} catch (e) {
-		console.error('Error loading CSS:', e);
 	}
+
+	// Initial load with short delay
+	setTimeout(() => {
+		console.log('[NetStat] Initial load');
+		loadCSS();
+	}, 100);
+
+	// Poll every 500ms
+	setInterval(() => {
+		loadCSS();
+	}, 500);
+	
+	console.log('[NetStat] CSS loader initialized');
 })();
 
-function parseStats(raw) {
-	try {
-		const lines = raw.trim().split('\n');
-		const stats = {};
-		lines.forEach(line => {
-			const parts = line.trim().split(':');
-			if (parts.length < 2) return;
-			const iface = parts[0].trim();
-			const values = parts[1].trim().split(/\s+/);
+function parseNetdev(raw) {
+	const stats = {};
+	const lines = raw.split('\n');
+	
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+		if (!line || line.startsWith('face') || line.startsWith('|')) continue;
+		
+		const match = line.match(/^([^:]+):\s+(.*)$/);
+		if (!match) continue;
+		
+		const iface = match[1].trim();
+		const values = match[2].trim().split(/\s+/).map(v => parseInt(v) || 0);
+		
+		if (values.length >= 9) {
 			stats[iface] = {
-				rx: parseInt(values[0]) || 0,
-				tx: parseInt(values[8]) || 0
+				rx: values[0],
+				tx: values[8]
 			};
-		});
-		return stats;
-	} catch (e) {
-		console.error('parseStats error:', e);
-		return {};
+		}
 	}
-}
-
-function getPublicIP() {
-	return fs.exec('/usr/bin/curl', [
-		'-sL', '--connect-timeout', '2', '--max-time', '3', 'https://ip.guide'
-	])
-		.then(res => {
-			try {
-				return JSON.parse(res.stdout);
-			} catch {
-				return { ip: 'Unavailable', network: { autonomous_system: { name: 'Unknown' } } };
-			}
-		})
-		.catch(() => ({ ip: 'Unavailable', network: { autonomous_system: { name: 'Unknown' } } }));
-}
-
-function getPreferredInterfaces() {
-	return fs.exec('/sbin/uci', ['get', 'netstats.@config[0].prefer'])
-		.then(res => res.stdout.trim().split(/\s+/).filter(Boolean))
-		.catch(() => []);
-}
-
-async function getMode() {
-	try {
-		const backendRes = await fs.exec('/sbin/uci', ['get', 'netstats.@config[0].backend']);
-		const backend = backendRes.stdout.trim().toLowerCase();
-		if (backend !== 'vnstat') return '';
-
-		const modeRes = await fs.exec('/sbin/uci', ['get', 'netstats.@config[0].mode']);
-		const val = modeRes.stdout.trim().toLowerCase();
-		return (val === 'daily' || val === 'monthly') ? val : 'daily';
-	} catch {
-		return '';
-	}
-}
-
-function getBackend() {
-	return fs.exec('/sbin/uci', ['get', 'netstats.@config[0].backend'])
-		.then(res => {
-			const val = res.stdout.trim().toLowerCase();
-			return (val === 'vnstat') ? 'vnstat' : 'normal';
-		})
-		.catch(() => 'normal');
+	
+	return stats;
 }
 
 function getBestWAN(stats, preferred) {
@@ -128,60 +132,62 @@ function formatRate(bits) {
 	return { number: bits.toFixed(i > 0 ? 1 : 0), unit: units[i] + '/s' };
 }
 
-function formatSize(bytes) {
-	const units = ['B', 'KB', 'MB', 'GB'];
-	let i = 0;
-	while (bytes >= 1024 && i < units.length - 1) {
-		bytes /= 1024;
-		i++;
+function createSpeedMeter(label, speed, unit, color, icon) {
+	// Scale: 0 Mbps = 0%, 100 Mbps = 100%
+	let percentage = 0;
+	if (unit === 'Mbps/s') {
+		percentage = Math.min(100, (parseFloat(speed) / 100) * 100);
+	} else if (unit === 'Gbps/s') {
+		percentage = Math.min(100, (parseFloat(speed) / 1) * 100);
+	} else if (unit === 'Kbps/s') {
+		percentage = Math.min(100, (parseFloat(speed) / 1000) * 100);
 	}
-	return { number: bytes.toFixed(i > 0 ? 1 : 0), unit: units[i] };
-}
 
-function createStatCard(label, valueNum, valueUnit, color, iface) {
-	return E('div', { class: 'stats-card', style: 'box-shadow: none;' }, [
-		E('div', { class: 'stat-label' }, label),
-		E('div', { class: 'stat-value' }, [
-			E('span', { class: 'stat-number' }, valueNum),
-			E('br'),
-			E('span', { class: 'stat-unit' }, valueUnit)
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 12px; padding: 18px 14px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + ';' }, [
+		// Label and bar section
+		E('div', { style: 'display: flex; flex-direction: column; gap: 10px;' }, [
+			E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px;' }, label),
+			E('div', { 
+				style: 'width: 100%; height: 14px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 7px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
+			}, [
+				E('div', { 
+					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 8px ' + color + '50;' 
+				}, [])
+			])
 		]),
-		E('span', {
-			class: 'iface-badge',
-			style: `margin-top: 6px; display: inline-block; padding: 2px 6px; font-size: 10px; border-radius: 4px; background-color: ${color}; color: white;`
-		}, iface)
+		// Speed number
+		E('div', { style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px;' }, [
+			E('div', { style: 'display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;' }, [
+				E('span', { style: 'font-weight: 800; font-size: 36px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.12); line-height: 1;' }, speed),
+				E('span', { style: 'font-size: 12px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
+			])
+		])
 	]);
 }
 
-function createIPCard(ip, org) {
-	const ipVal = E('div', { class: 'ip-value', id: 'ip-value' }, ipVisible ? ip : '**********');
-	const eyeIcon = E('img', {
-		src: ipVisible
-			? '/luci-static/resources/netstat/eye-outline.svg'
-			: '/luci-static/resources/netstat/eye-off-outline.svg',
-		width: 18,
-		height: 18,
-		style: 'vertical-align: middle;'
-	});
-	const eye = E('span', {
-		class: 'eye-icon',
-		title: _('Show/Hide IP'),
-		style: 'cursor: pointer; vertical-align: middle; margin-left: 6px;'
-	}, [eyeIcon]);
-
-	eye.addEventListener('click', function () {
-		ipVisible = !ipVisible;
-		localStorage.setItem('ipVisible', ipVisible);
-		ipVal.textContent = ipVisible ? ip : '**********';
-		eyeIcon.src = ipVisible
-			? '/luci-static/resources/netstat/eye-outline.svg'
-			: '/luci-static/resources/netstat/eye-off-outline.svg';
-	});
-
-	return E('div', { class: 'ip-card full-width', style: 'box-shadow: none;' }, [
-		E('div', { class: 'ip-line' }, [ipVal, eye]),
-		E('div', { class: 'ip-org' }, org),
-		E('div', { class: 'bubble yellow' })
+function createStatusCard(status, ip) {
+	const isConnected = status === 'Connected';
+	const statusColor = isConnected ? '#4CAF50' : '#FF5252';
+	const statusBg = isConnected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 82, 82, 0.1)';
+	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
+	
+	return E('div', { class: 'ip-card', style: 'display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
+		// Status and IP - stacked on mobile, side by side on desktop
+		E('div', { style: 'display: flex; flex-direction: column; gap: 20px; width: 100%;' }, [
+			// Status (top/left)
+			E('div', { style: 'display: flex; flex-direction: column; gap: 8px; text-align: center;' }, [
+				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('INTERNET STATUS')),
+				E('div', { style: 'display: flex; align-items: center; justify-content: center; gap: 10px;' }, [
+					E('span', { style: 'width: 12px; height: 12px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;' }, []),
+					E('span', { style: 'font-weight: 700; font-size: 20px; color: ' + statusColor + ';' }, status)
+				])
+			]),
+			// IP (bottom/right)
+			E('div', { style: 'display: flex; flex-direction: column; gap: 8px; text-align: center;' }, [
+				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('PUBLIC IP')),
+				E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; font-family: monospace; text-shadow: 0 2px 6px rgba(0,0,0,0.12); word-break: break-all;' }, ip)
+			])
+		])
 	]);
 }
 
@@ -189,74 +195,29 @@ return baseclass.extend({
 	title: _(''),
 
 	load: function () {
-		return Promise.all([
-			fs.read_direct('/proc/net/dev').then(parseStats).catch(() => ({})),
-			getPublicIP(),
-			getPreferredInterfaces(),
-			getMode(),
-			getBackend()
-		]).then(async ([netStats, ipData, preferred, mode, backend]) => {
-			const iface = getBestWAN(netStats, preferred);
-			let vnstatRx = 0, vnstatTx = 0;
-
-			if (backend === 'vnstat') {
-				try {
-					const res = await fs.exec('/usr/bin/vnstat', ['-i', iface, '--json']);
-					const json = JSON.parse(res.stdout);
-					const key = mode === 'daily' ? 'days' : (mode === 'monthly' ? 'months' : 'days');
-					const trafficArr = json.interfaces?.[0]?.traffic?.[key];
-
-					if (Array.isArray(trafficArr) && trafficArr.length > 0) {
-						const today = new Date();
-						let matchEntry;
-
-						if (mode === 'monthly') {
-							matchEntry = trafficArr.find(e =>
-								e.date &&
-								e.date.year === today.getFullYear() &&
-								e.date.month === today.getMonth() + 1
-							);
-						} else {
-							matchEntry = trafficArr.find(e =>
-								e.date &&
-								e.date.year === today.getFullYear() &&
-								e.date.month === today.getMonth() + 1 &&
-								e.date.day === today.getDate()
-							);
-						}
-
-						if (matchEntry) {
-							vnstatRx = matchEntry.rx * 1024;
-							vnstatTx = matchEntry.tx * 1024;
-						} else {
-							const lastEntry = trafficArr[trafficArr.length - 1];
-							if (lastEntry) {
-								vnstatRx = lastEntry.rx * 1024;
-								vnstatTx = lastEntry.tx * 1024;
-							} else {
-								const total = json.interfaces?.[0]?.traffic?.total;
-								if (total) {
-									vnstatRx = total.rx * 1024;
-									vnstatTx = total.tx * 1024;
-								}
-							}
-						}
-					} else {
-						const total = json.interfaces?.[0]?.traffic?.total;
-						if (total) {
-							vnstatRx = total.rx * 1024;
-							vnstatTx = total.tx * 1024;
-						}
-					}
-				} catch (e) {
-					console.warn('vnstat error:', e);
-				}
-			} else {
-				vnstatRx = netStats[iface]?.rx || 0;
-				vnstatTx = netStats[iface]?.tx || 0;
-			}
-
-			return { netStats, ipData, preferred, vnstatRx, vnstatTx, mode, backend };
+		// Direct call to getNetdevStats function via HTTP
+		return L.resolveDefault(
+			fetch('/cgi-bin/luci/admin/tools/get_netdev_stats')
+				.then(res => res.json())
+				.catch(() => ({ stats: {}, ip: 'N/A', status: 'Disconnected' })),
+			{ stats: {}, ip: 'N/A', status: 'Disconnected' }
+		).then(result => {
+			const stats = (result && result.stats) || result || {};
+			const ip = (result && result.ip) || 'N/A';
+			const status = (result && result.status) || 'Disconnected';
+			return {
+				stats: stats,
+				ip: ip,
+				status: status,
+				preferred: []
+			};
+		}).catch(() => {
+			return {
+				stats: {},
+				ip: 'N/A',
+				status: 'Disconnected',
+				preferred: []
+			};
 		});
 	},
 
@@ -265,78 +226,68 @@ return baseclass.extend({
 		const dt = Math.max(0.1, (now - last_time) / 1000);
 		last_time = now;
 
-		const stats = Object.fromEntries(
-			Object.entries(data.netStats).filter(([k]) => !['lo', 'br-lan', 'docker0'].includes(k))
-		);
+		const stats = data.stats;
+		if (!stats || typeof stats !== 'object' || Array.isArray(stats)) {
+			return E('div', { style: 'padding: 20px; text-align: center; color: #999; font-size: 13px;' }, 
+				_('Loading network stats...')
+			);
+		}
 
-		const iface = getBestWAN(stats, data.preferred);
+		const preferred = data.preferred || [];
+		const iface = getBestWAN(stats, preferred);
 		const curr = stats[iface] || { rx: 0, tx: 0 };
-		const prevStat = prev[iface] || curr;
+		
+		// Ensure values are numbers
+		curr.rx = parseInt(curr.rx) || 0;
+		curr.tx = parseInt(curr.tx) || 0;
+		
+		const prevStat = prev[iface] || { rx: curr.rx, tx: curr.tx };
 
-		let rxSpeed = (curr.rx - prevStat.rx) / dt;
-		let txSpeed = (curr.tx - prevStat.tx) / dt;
+		let rxSpeed = Math.max(0, (curr.rx - prevStat.rx) / dt);
+		let txSpeed = Math.max(0, (curr.tx - prevStat.tx) / dt);
 
-		prev[iface] = curr;
+		prev[iface] = { rx: curr.rx, tx: curr.tx };
 
 		const rxRate = formatRate(rxSpeed * 8);
 		const txRate = formatRate(txSpeed * 8);
 
-		const rxTotal = formatSize(data.backend === 'vnstat' ? data.vnstatRx : curr.rx);
-		const txTotal = formatSize(data.backend === 'vnstat' ? data.vnstatTx : curr.tx);
+		// Create container with better styling
+		const container = E('div', { class: 'stats-grid', style: 'display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8f9fa; box-sizing: border-box;' });
+		
+		// Add header section
+		const header = E('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); gap: 10px; flex-wrap: wrap;' }, [
+			E('span', { style: 'font-weight: 700; font-size: 12px; text-transform: uppercase; color: #555; letter-spacing: 0.8px;' }, _('Network Status')),
+			E('span', { style: 'font-size: 10px; color: #999;' }, iface)
+		]);
+		container.appendChild(header);
+		
+		// Add speed meters
+		container.appendChild(createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50'));
+		container.appendChild(createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3'));
+		
+		// Add internet status with IP
+		const status = data.status || 'Disconnected';
+		const ip = data.ip || 'N/A';
+		container.appendChild(createStatusCard(status, ip));
 
-		const rxIfaceLabel = data.backend === 'vnstat' ? 'vnstat' : iface;
-		const txIfaceLabel = data.backend === 'vnstat' ? 'vnstat' : iface;
-
-		let rxLabel, txLabel;
-		if (data.backend === 'vnstat') {
-			if (data.mode === 'daily') {
-				rxLabel = _('Daily RX');
-				txLabel = _('Daily TX');
-			} else if (data.mode === 'monthly') {
-				rxLabel = _('Monthly RX');
-				txLabel = _('Monthly TX');
-			} else {
-				rxLabel = _('Total RX');
-				txLabel = _('Total TX');
-			}
-		} else {
-			rxLabel = _('Total RX');
-			txLabel = _('Total TX');
-		}
-
-		const grid = E('div', { class: 'stats-grid' });
-		grid.appendChild(createStatCard(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50', iface));
-		grid.appendChild(createStatCard(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3', iface));
-		grid.appendChild(createStatCard(rxLabel, rxTotal.number, rxTotal.unit, '#FF9800', rxIfaceLabel));
-		grid.appendChild(createStatCard(txLabel, txTotal.number, txTotal.unit, '#9C27B0', txIfaceLabel));
-		grid.appendChild(createIPCard(data.ipData?.ip || 'Unavailable', data.ipData?.network?.autonomous_system?.name || 'Unknown'));
-
-		let vnstatLastUpdate = 0;
-
+		// Set up polling for real-time updates
 		L.Poll.add(() => {
-			const now = Date.now();
-			if (now - vnstatLastUpdate > 120000) {
-				vnstatLastUpdate = now;
-				fs.exec('/usr/bin/vnstat', ['--update'])
-					.catch(e => console.warn('vnstat update error:', e));
-			}
-
-			return fs.read_direct('/proc/net/dev')
-				.then(raw => {
-					const updated = parseStats(raw);
-					return this.render({
-						netStats: updated,
-						ipData: data.ipData,
-						preferred: data.preferred,
-						vnstatRx: data.vnstatRx,
-						vnstatTx: data.vnstatTx,
-						mode: data.mode,
-						backend: data.backend
-					});
-				});
-
+			return L.resolveDefault(
+				fetch('/cgi-bin/luci/admin/tools/get_netdev_stats')
+					.then(res => res.json())
+					.catch(() => ({ stats: {}, ip: 'N/A', status: 'Disconnected' })),
+				{ stats: {}, ip: 'N/A', status: 'Disconnected' }
+			).then(result => {
+				const newStats = (result && result.stats) || {};
+				const newIP = (result && result.ip) || 'N/A';
+				const newStatus = (result && result.status) || 'Disconnected';
+				return this.render({ stats: newStats, ip: newIP, status: newStatus, preferred: preferred });
+			}).catch((e) => {
+				console.error('Fetch error:', e);
+				return container;
+			});
 		}, 1000);
 
-		return E('div', {}, [grid]);
+		return container;
 	}
 });
