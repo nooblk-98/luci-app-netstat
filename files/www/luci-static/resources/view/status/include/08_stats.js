@@ -155,15 +155,15 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 
 	const formattedTotal = formatBytes(totalBytes);
 
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + '; height: 100%;' }, [
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + '; height: 100%;' }, [
 		// Label
 		E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px;' }, label),
 		
 		// Progress bar and total - horizontal layout
-		E('div', { style: 'display: flex; align-items: center; gap: 10px; flex-wrap: wrap;' }, [
+		E('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
 			// Progress bar
 			E('div', { 
-				style: 'flex: 1 1 auto; min-width: 150px; height: 10px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 5px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
+				style: 'flex: 1 1 0; min-width: 0; height: 10px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 5px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
 			}, [
 				E('div', { 
 					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 6px ' + color + '50;' 
@@ -171,22 +171,22 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 			]),
 			
 			// Vertical separator
-			E('div', { style: 'width: 2px; height: 30px; background: ' + color + '; border-radius: 1px; opacity: 0.35;' }),
+			E('div', { style: 'width: 2px; height: 24px; background: ' + color + '; border-radius: 1px; opacity: 0.35; flex-shrink: 0;' }),
 			
 			// Total with large text
-			E('div', { style: 'display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; min-width: 140px;' }, [
-				E('span', { style: 'font-size: 9px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px;' }, totalLabel),
-				E('div', { style: 'display: flex; align-items: baseline; gap: 4px;' }, [
-					E('span', { style: 'font-weight: 800; font-size: clamp(28px, 8vw, 34px); color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, formattedTotal.number),
-					E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, formattedTotal.unit)
+			E('div', { style: 'display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; width: 110px;' }, [
+				E('span', { style: 'font-size: 8px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;' }, totalLabel),
+				E('div', { style: 'display: flex; align-items: baseline; gap: 3px;' }, [
+					E('span', { style: 'font-weight: 800; font-size: clamp(22px, 6vw, 30px); color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, formattedTotal.number),
+					E('span', { style: 'font-size: 11px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, formattedTotal.unit)
 				])
 			])
 		]),
 		
 		// Speed number
-		E('div', { style: 'display: flex; align-items: baseline; gap: 6px; margin-top: 2px; flex-wrap: wrap;' }, [
-			E('span', { style: 'font-weight: 800; font-size: clamp(28px, 8vw, 34px); color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, speed),
-			E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
+		E('div', { style: 'display: flex; align-items: baseline; gap: 4px; margin-top: 2px;' }, [
+			E('span', { style: 'font-weight: 800; font-size: clamp(24px, 7vw, 32px); color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, speed),
+			E('span', { style: 'font-size: 12px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
 		])
 	]);
 }
@@ -196,21 +196,21 @@ function createStatusContainer(status, ip) {
 	const statusColor = isConnected ? '#4CAF50' : '#FF5252';
 	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
 	
-	return E('div', { style: 'display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 14px 20px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid #9C27B0;' }, [
+	return E('div', { style: 'display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; padding: 12px 16px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid #9C27B0;' }, [
 		// Internet Status
-		E('div', { style: 'display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%;' }, [
-			E('span', { style: 'font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('INTERNET STATUS')),
+		E('div', { style: 'display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%;' }, [
+			E('span', { style: 'font-size: 9px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px;' }, _('INTERNET STATUS')),
 			E('div', { style: 'display: flex; align-items: center; gap: 8px;' }, [
-				E('span', { style: 'width: 12px; height: 12px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px ' + dotColor + '80;' }),
-				E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, status)
+				E('span', { style: 'width: 10px; height: 10px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px ' + dotColor + '80;' }),
+				E('span', { style: 'font-weight: 800; font-size: clamp(18px, 5vw, 22px); color: ' + statusColor + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, status)
 			])
 		]),
 		// Horizontal separator
-		E('div', { style: 'width: 80%; height: 2px; background: linear-gradient(90deg, transparent, #9C27B0, transparent); border-radius: 1px; opacity: 0.35;' }),
+		E('div', { style: 'width: 70%; height: 2px; background: linear-gradient(90deg, transparent, #9C27B0, transparent); border-radius: 1px; opacity: 0.35;' }),
 		// Public IP
-		E('div', { style: 'display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%;' }, [
-			E('span', { style: 'font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('PUBLIC IP')),
-			E('span', { style: 'font-weight: 800; font-size: 20px; color: ' + statusColor + '; font-family: monospace; text-align: center; word-break: break-all; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, ip)
+		E('div', { style: 'display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%;' }, [
+			E('span', { style: 'font-size: 9px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.6px;' }, _('PUBLIC IP')),
+			E('span', { style: 'font-weight: 800; font-size: clamp(16px, 4.5vw, 18px); color: ' + statusColor + '; font-family: monospace; text-align: center; word-break: break-all; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, ip)
 		])
 	]);
 }
