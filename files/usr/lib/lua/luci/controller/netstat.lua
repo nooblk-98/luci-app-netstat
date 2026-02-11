@@ -44,13 +44,13 @@ function getNetdevStats()
         end
     end
     
-    -- Get public IP in background (non-blocking)
+    -- Get public IP using curl api.ipify.org with timeout
     local ip = "N/A"
-    -- Try quick wget to ifconfig.me
-    local f_ip = io.popen("timeout 3 wget -qO- http://ifconfig.me 2>/dev/null")
+    local cmd = "curl -s --max-time 3 'https://api.ipify.org?format=text' 2>/dev/null"
+    local f_ip = io.popen(cmd)
     if f_ip then
         local ip_result = f_ip:read("*l")
-        if ip_result and ip_result ~= "" then
+        if ip_result and ip_result ~= "" and string.len(ip_result) < 20 then
             ip = ip_result
         end
         f_ip:close()
