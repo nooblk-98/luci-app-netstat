@@ -155,7 +155,7 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 
 	const formattedTotal = formatBytes(totalBytes);
 
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + '; height: 100%;' }, [
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + '; height: 100%;' }, [
 		// Label
 		E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px;' }, label),
 		
@@ -163,7 +163,7 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 		E('div', { style: 'display: flex; align-items: center; gap: 14px;' }, [
 			// Progress bar
 			E('div', { 
-				style: 'width: 450px; height: 14px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 7px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
+				style: 'flex: 1; min-width: 200px; height: 14px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 7px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
 			}, [
 				E('div', { 
 					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 6px ' + color + '50;' 
@@ -196,9 +196,9 @@ function createStatusContainer(status, ip) {
 	const statusColor = isConnected ? '#4CAF50' : '#FF5252';
 	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
 	
-	return E('div', { style: 'display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 32px; padding: 24px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid #9C27B0; height: 100%; min-height: 260px;' }, [
+	return E('div', { style: 'display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 24px; padding: 20px 24px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid #9C27B0;' }, [
 		// Internet Status
-		E('div', { style: 'display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;' }, [
+		E('div', { style: 'display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;' }, [
 			E('span', { style: 'font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('INTERNET STATUS')),
 			E('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
 				E('span', { style: 'width: 14px; height: 14px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px ' + dotColor + '80;' }),
@@ -206,9 +206,9 @@ function createStatusContainer(status, ip) {
 			])
 		]),
 		// Horizontal separator
-		E('div', { style: 'width: 80%; height: 3px; background: linear-gradient(90deg, transparent, #9C27B0, transparent); border-radius: 1.5px; opacity: 0.3;' }),
+		E('div', { style: 'width: 85%; height: 3px; background: linear-gradient(90deg, transparent, #9C27B0, transparent); border-radius: 1.5px; opacity: 0.35;' }),
 		// Public IP
-		E('div', { style: 'display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;' }, [
+		E('div', { style: 'display: flex; flex-direction: column; gap: 10px; align-items: center; width: 100%;' }, [
 			E('span', { style: 'font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('PUBLIC IP')),
 			E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; font-family: monospace; text-align: center; word-break: break-all; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, ip)
 		])
@@ -290,13 +290,13 @@ return baseclass.extend({
 		const ip = data.ip || 'N/A';
 		
 		// Create grid layout: speed meters on left, status on right
-		const gridContainer = E('div', { style: 'display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: stretch;' }, [
-			// Left column: speed meters
+		const gridContainer = E('div', { style: 'display: grid; grid-template-columns: 1fr; gap: 12px; align-items: stretch;' }, [
+			// Speed meters
 			E('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
 				createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50', null, curr.rx, _('TOTAL DOWNLOAD')),
 				createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3', null, curr.tx, _('TOTAL UPLOAD'))
 			]),
-			// Right column: status container (spans full height)
+			// Status container
 			createStatusContainer(status, ip)
 		]);
 		
