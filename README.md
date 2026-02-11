@@ -2,8 +2,6 @@
 
 <div align="center">
 
-![Dashboard Preview](images/dash.png)
-
 **A professional network statistics application for OpenWrt LuCI**
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](LICENSE)
@@ -17,6 +15,8 @@
 ---
 
 ## Overview
+![Dashboard Preview](images/dash.png)
+
 
 **luci-app-netstat** is a modern, feature-rich LuCI application that provides comprehensive network traffic statistics and monitoring for OpenWrt routers. It leverages `vnstat` for accurate traffic monitoring and presents the data through an intuitive web interface.
 
@@ -103,75 +103,6 @@ service vnstat enable
 - **Weekly Reports** - Weekly traffic patterns
 - **Monthly Analysis** - Monthly usage overview
 - **Yearly Trends** - Yearly traffic history
-
-## Project Structure
-
-```
-luci-app-netstat/
-├── files/
-│   ├── etc/
-│   │   ├── config/
-│   │   │   ├── netstats      # Default configuration
-│   │   │   └── vnstat        # vnstat config
-│   │   └── uci-defaults/
-│   │       └── 99-vnstat     # UCI defaults setup
-│   └── usr/
-│       ├── lib/lua/luci/
-│       │   ├── controller/netstat.lua    # LuCI controller
-│       │   ├── model/cbi/netstat/        # CBI models
-│       │   └── view/vnstat.htm           # View template
-│       └── libexec/rpcd/                 # RPC daemon interface
-├── www/
-│   └── luci-static/
-│       └── resources/
-│           ├── netstat/
-│           │   ├── chart.js              # Chart visualization
-│           │   ├── netstat.css           # Stylesheet
-│           │   └── netstat_dark.css      # Dark theme
-│           └── view/status/include/08_stats.js
-├── Makefile                  # OpenWrt package definition
-└── README.md                 # This file
-```
-
-## Development
-
-### Building from Source
-
-```bash
-# Clone repository
-git clone https://github.com/dotycat/luci-app-netstat.git
-cd luci-app-netstat
-
-# Install dependencies (if using npm utilities)
-npm install
-
-# Build the package
-make
-
-# Watch for changes (optional)
-npm run dev
-```
-
-### Customization
-
-- **Styling**: Modify CSS files in `www/luci-static/resources/netstat/`
-- **Charts**: Adjust chart.js configuration in `www/luci-static/resources/netstat/chart.js`
-- **Logic**: Update LuCI controller in `files/usr/lib/lua/luci/controller/netstat.lua`
-
-## Troubleshooting
-
-### Statistics not showing
-- Ensure vnstat is installed and running: `service vnstat status`
-- Check vnstat database: `vnstat -i wan`
-- Verify correct interface name in UCI config
-
-### CSS not loading
-- Clear browser cache (Ctrl+Shift+Delete)
-- Restart LuCI: `service uhttpd restart`
-
-### Performance issues
-- Increase vnstat update interval in configuration
-- Check router system resources: `free` / `top`
 
 ## Credits
 
