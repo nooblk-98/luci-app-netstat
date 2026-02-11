@@ -155,15 +155,15 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 
 	const formattedTotal = formatBytes(totalBytes);
 
-	return E('div', { style: 'display: flex; flex-direction: column; gap: 10px; padding: 16px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + ';' }, [
+	return E('div', { style: 'display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid ' + color + '; height: 100%;' }, [
 		// Label
-		E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px; margin-bottom: 2px;' }, label),
+		E('span', { style: 'font-weight: 700; font-size: 11px; text-transform: uppercase; color: #333; letter-spacing: 0.6px;' }, label),
 		
 		// Progress bar and total - horizontal layout
-		E('div', { style: 'display: flex; align-items: center; gap: 12px;' }, [
+		E('div', { style: 'display: flex; align-items: center; gap: 14px;' }, [
 			// Progress bar
 			E('div', { 
-				style: 'width: 300px; height: 12px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 6px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
+				style: 'width: 450px; height: 14px; background: linear-gradient(90deg, rgba(200,200,200,0.25) 0%, rgba(200,200,200,0.15) 100%); border-radius: 7px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);' 
 			}, [
 				E('div', { 
 					style: 'height: 100%; background: linear-gradient(90deg, ' + color + ' 0%, ' + color + '85 100%); width: ' + percentage + '%; transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); box-shadow: 0 0 6px ' + color + '50;' 
@@ -171,48 +171,46 @@ function createSpeedMeter(label, speed, unit, color, icon, totalBytes, totalLabe
 			]),
 			
 			// Vertical separator
-			E('div', { style: 'width: 2px; height: 30px; background: ' + color + '; border-radius: 1px; opacity: 0.3;' }),
+			E('div', { style: 'width: 3px; height: 40px; background: ' + color + '; border-radius: 1.5px; opacity: 0.35;' }),
 			
 			// Total with large text
 			E('div', { style: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px; flex-shrink: 0;' }, [
-				E('span', { style: 'font-size: 9px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px;' }, totalLabel),
-				E('div', { style: 'display: flex; align-items: baseline; gap: 4px;' }, [
-					E('span', { style: 'font-weight: 800; font-size: 38px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, formattedTotal.number),
-					E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, formattedTotal.unit)
+				E('span', { style: 'font-size: 9px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.5px;' }, totalLabel),
+				E('div', { style: 'display: flex; align-items: baseline; gap: 5px;' }, [
+					E('span', { style: 'font-weight: 800; font-size: 42px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, formattedTotal.number),
+					E('span', { style: 'font-size: 14px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, formattedTotal.unit)
 				])
 			])
 		]),
 		
 		// Speed number
 		E('div', { style: 'display: flex; align-items: baseline; gap: 6px; margin-top: 4px;' }, [
-			E('span', { style: 'font-weight: 800; font-size: 38px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, speed),
-			E('span', { style: 'font-size: 13px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
+			E('span', { style: 'font-weight: 800; font-size: 42px; color: ' + color + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1); line-height: 1;' }, speed),
+			E('span', { style: 'font-size: 14px; font-weight: 700; color: ' + color + '; opacity: 0.85;' }, unit)
 		])
 	]);
 }
 
-function createStatusCard(status, ip) {
+function createStatusContainer(status, ip) {
 	const isConnected = status === 'Connected';
 	const statusColor = isConnected ? '#4CAF50' : '#FF5252';
-	const statusBg = isConnected ? 'rgba(76, 175, 80, 0.1)' : 'rgba(255, 82, 82, 0.1)';
 	const dotColor = isConnected ? '#4CAF50' : '#FF5252';
 	
-	return E('div', { class: 'ip-card', style: 'display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: ' + statusBg + '; border-radius: 8px; border-left: 5px solid ' + statusColor + '; margin-top: 10px;' }, [
-		// Status and IP - stacked on mobile, side by side on desktop
-		E('div', { style: 'display: flex; flex-direction: column; gap: 20px; width: 100%;' }, [
-			// Status (top/left)
-			E('div', { style: 'display: flex; flex-direction: column; gap: 8px; text-align: center;' }, [
-				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('INTERNET STATUS')),
-				E('div', { style: 'display: flex; align-items: center; justify-content: center; gap: 10px;' }, [
-					E('span', { style: 'width: 12px; height: 12px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; animation: pulse 2s infinite;' }, []),
-					E('span', { style: 'font-weight: 700; font-size: 20px; color: ' + statusColor + ';' }, status)
-				])
-			]),
-			// IP (bottom/right)
-			E('div', { style: 'display: flex; flex-direction: column; gap: 8px; text-align: center;' }, [
-				E('div', { style: 'font-weight: 600; font-size: 11px; text-transform: uppercase; color: #555; letter-spacing: 0.6px;' }, _('PUBLIC IP')),
-				E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; font-family: monospace; text-shadow: 0 2px 6px rgba(0,0,0,0.12); word-break: break-all;' }, ip)
+	return E('div', { style: 'display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 32px; padding: 24px; background: linear-gradient(135deg, rgba(245,245,245,0.8) 0%, rgba(255,255,255,0.5) 100%); border-radius: 8px; border-left: 5px solid #9C27B0; height: 100%; min-height: 260px;' }, [
+		// Internet Status
+		E('div', { style: 'display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;' }, [
+			E('span', { style: 'font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('INTERNET STATUS')),
+			E('div', { style: 'display: flex; align-items: center; gap: 10px;' }, [
+				E('span', { style: 'width: 14px; height: 14px; background: ' + dotColor + '; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px ' + dotColor + '80;' }),
+				E('span', { style: 'font-weight: 800; font-size: 28px; color: ' + statusColor + '; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, status)
 			])
+		]),
+		// Horizontal separator
+		E('div', { style: 'width: 80%; height: 3px; background: linear-gradient(90deg, transparent, #9C27B0, transparent); border-radius: 1.5px; opacity: 0.3;' }),
+		// Public IP
+		E('div', { style: 'display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;' }, [
+			E('span', { style: 'font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px;' }, _('PUBLIC IP')),
+			E('span', { style: 'font-weight: 800; font-size: 24px; color: ' + statusColor + '; font-family: monospace; text-align: center; word-break: break-all; text-shadow: 0 2px 6px rgba(0,0,0,0.1);' }, ip)
 		])
 	]);
 }
@@ -278,7 +276,7 @@ return baseclass.extend({
 		const txRate = formatRate(txSpeed * 8);
 
 		// Create container with better styling
-		const container = E('div', { class: 'stats-grid', style: 'display: flex; flex-direction: column; gap: 12px; padding: 14px; background: #f8f9fa; box-sizing: border-box;' });
+		const container = E('div', { style: 'padding: 14px; background: #f8f9fa; box-sizing: border-box;' });
 		
 		// Add header section
 		const header = E('div', { style: 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.08); gap: 10px; flex-wrap: wrap;' }, [
@@ -287,14 +285,22 @@ return baseclass.extend({
 		]);
 		container.appendChild(header);
 		
-		// Add speed meters
-		container.appendChild(createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50', null, curr.rx, _('TOTAL DOWNLOAD')));
-		container.appendChild(createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3', null, curr.tx, _('TOTAL UPLOAD')));
-		
-		// Add internet status with IP
+		// Get status and IP
 		const status = data.status || 'Disconnected';
 		const ip = data.ip || 'N/A';
-		container.appendChild(createStatusCard(status, ip));
+		
+		// Create grid layout: speed meters on left, status on right
+		const gridContainer = E('div', { style: 'display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: stretch;' }, [
+			// Left column: speed meters
+			E('div', { style: 'display: flex; flex-direction: column; gap: 12px;' }, [
+				createSpeedMeter(_('DOWNLOAD'), rxRate.number, rxRate.unit, '#4CAF50', null, curr.rx, _('TOTAL DOWNLOAD')),
+				createSpeedMeter(_('UPLOAD'), txRate.number, txRate.unit, '#2196F3', null, curr.tx, _('TOTAL UPLOAD'))
+			]),
+			// Right column: status container (spans full height)
+			createStatusContainer(status, ip)
+		]);
+		
+		container.appendChild(gridContainer);
 
 		// Set up polling for real-time updates
 		L.Poll.add(() => {
