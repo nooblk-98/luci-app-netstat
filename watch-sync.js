@@ -21,38 +21,19 @@ const CONFIG = {
 // Path mappings: local -> remote
 const PATH_MAPPINGS = [
   {
-    local: 'files\\usr\\lib\\lua\\luci',
-    remote: '/usr/lib/lua/luci',
-    description: 'LuCI Lua modules (controller, model, view)'
-  },
-  {
     local: 'files\\www\\luci-static\\resources\\netstat',
     remote: '/www/luci-static/resources/netstat',
-    description: 'NetStat static resources (CSS, JS)'
+    description: 'NetStat widget CSS and resources'
   },
   {
     local: 'files\\www\\luci-static\\resources\\view\\status\\include\\08_stats.js',
     remote: '/www/luci-static/resources/view/status/include/08_stats.js',
-    description: 'NetStat status view include',
-    isFile: true
+    description: 'Main widget file'
   },
   {
-    local: 'files\\etc\\config\\netstats',
-    remote: '/etc/config/netstats',
-    description: 'NetStat config file',
-    isFile: true
-  },
-  {
-    local: 'files\\etc\\config\\vnstat',
-    remote: '/etc/config/vnstat',
-    description: 'VNStat config file',
-    isFile: true
-  },
-  {
-    local: 'files\\etc\\uci-defaults\\99-vnstat',
-    remote: '/etc/uci-defaults/99-vnstat',
-    description: 'VNStat UCI defaults',
-    isFile: true
+    local: 'files\\usr\\lib\\lua\\luci\\controller\\netstat.lua',
+    remote: '/usr/lib/lua/luci/controller/netstat.lua',
+    description: 'NetStat Lua controller with RPC handler'
   }
 ];
 
