@@ -137,7 +137,7 @@ Contributions are welcome! Please feel free to:
 For support, issues, or questions:
 - Open an [Issue](../../issues) on GitHub
 - Check existing [Discussions](../../discussions)
-- Contact: support@dotycat.com
+- Contact: liyanagelsofficial@gmail.com
 
 ---
 
