@@ -102,25 +102,13 @@ service vnstat enable
 
 - **Current Usage** - Real-time traffic rates
 - **Daily Statistics** - Traffic breakdown by day
-- **Weekly Reports** - Weekly traffic patterns
 - **Monthly Analysis** - Monthly usage overview
-- **Yearly Trends** - Yearly traffic history
 
 ## Credits
 
 - **Original Development**: [SMALLPROGRAM](https://github.com/smallprogram)
 - **Maintenance**: [nooblk-98](https://github.com/nooblk-98/)
 
-## License
-
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
-
-```
-luci-app-netstat is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
 
 ## Contributing
 
@@ -142,7 +130,5 @@ For support, issues, or questions:
 <div align="center">
 
 **Made with ❤️ for the OpenWrt Community**
-
-[⬆ Back to top](#luci-app-netstat)
 
 </div>
