@@ -109,6 +109,48 @@ local function get_monthly_stats(iface)
     return ensure_current_monthly(stats)
 end
 
+local function get_hourly_stats(iface)
+    local stats = {}
+    local output = sys.exec("vnstat -i " .. iface .. " --hours 2>/dev/null") or ""
+    for label, rx_val, rx_unit, tx_val, tx_unit in
+        output:gmatch("(%d%d/%d%d/%d%d%s+%d%d:%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
+        table.insert(stats, {
+            hour = label,
+            rx = to_bytes(rx_val, rx_unit),
+            tx = to_bytes(tx_val, tx_unit)
+        })
+    end
+    return stats
+end
+
+local function get_yearly_stats(iface)
+    local stats = {}
+    local output = sys.exec("vnstat -i " .. iface .. " --years 2>/dev/null") or ""
+    for year, rx_val, rx_unit, tx_val, tx_unit in
+        output:gmatch("(%d%d%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
+        table.insert(stats, {
+            year = year,
+            rx = to_bytes(rx_val, rx_unit),
+            tx = to_bytes(tx_val, tx_unit)
+        })
+    end
+    return stats
+end
+
+local function get_top_stats(iface)
+    local stats = {}
+    local output = sys.exec("vnstat -i " .. iface .. " --top10 2>/dev/null") or ""
+    for date, rx_val, rx_unit, tx_val, tx_unit in
+        output:gmatch("(%d%d/%d%d/%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
+        table.insert(stats, {
+            date = format_date(date),
+            rx = to_bytes(rx_val, rx_unit),
+            tx = to_bytes(tx_val, tx_unit)
+        })
+    end
+    return stats
+end
+
 local function format_bytes(value)
     if value >= 1099511627776 then
         return string.format("%.2f TB", value / 1099511627776)
@@ -131,9 +173,18 @@ local stats = {}
 local title = ""
 
 if current_iface ~= "" then
-    if view_mode == "monthly" then
+    if view_mode == "hourly" then
+        stats = get_hourly_stats(current_iface)
+        title = translate("Hourly")
+    elseif view_mode == "monthly" then
         stats = get_monthly_stats(current_iface)
         title = translate("Monthly")
+    elseif view_mode == "yearly" then
+        stats = get_yearly_stats(current_iface)
+        title = translate("Yearly")
+    elseif view_mode == "top" then
+        stats = get_top_stats(current_iface)
+        title = translate("Top Days")
     else
         stats = get_daily_stats(current_iface)
         title = translate("Daily")
@@ -149,113 +200,12 @@ end
 %>
 
 <style>
-.netstat-tabs {
-    display: flex;
-    gap: 8px;
-    margin: 0 0 12px;
-}
-
-.netstat-tab-btn {
-    border: 1px solid #cbd5e1;
-    background: #f8fafc;
-    color: #334155;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 8px 14px;
-    cursor: pointer;
-}
-
-.netstat-tab-btn.active {
-    background: #2563eb;
-    border-color: #2563eb;
-    color: #fff;
-}
-
-.cbi-map > .cbi-section {
-    border: 1px solid #dfe3eb;
-    border-radius: 10px;
-    background: #fff;
-    padding: 16px 18px;
-    margin-bottom: 14px;
-}
-
-.cbi-map > .cbi-section > h3 {
-    margin: 0 0 14px;
-    font-size: 18px;
-}
-
-.cbi-map > .cbi-section .cbi-section-node > .cbi-value {
-    display: grid;
-    grid-template-columns: 220px minmax(280px, 560px);
-    gap: 10px 14px;
-    align-items: start;
-    margin: 0 0 12px;
-}
-
-.cbi-map > .cbi-section .cbi-value-title {
-    margin: 0;
-    padding-top: 8px;
-    font-weight: 600;
-    color: #25324b;
-}
-
-.cbi-map > .cbi-section .cbi-value-field {
-    max-width: 560px;
-    width: 100%;
-}
-
-.cbi-map > .cbi-section .cbi-input-select {
-    width: 100%;
-}
-
-.cbi-map > .cbi-section .cbi-value-description {
-    margin-top: 8px;
-    color: #667085;
-    line-height: 1.45;
-}
-
 .netstat-dashboard {
     border: 1px solid #dfe3eb;
     border-radius: 10px;
     background: #fff;
     padding: 16px 18px;
     margin-top: 0;
-}
-
-.netstat-dashboard-header {
-    margin: 0 0 12px;
-    color: #334155;
-    font-size: 14px;
-}
-
-.netstat-filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 10px 14px;
-    align-items: end;
-    margin-bottom: 14px;
-}
-
-.netstat-filter-grid .cbi-value {
-    margin: 0;
-    display: grid;
-    grid-template-columns: 120px minmax(180px, 320px);
-    gap: 8px 12px;
-    align-items: center;
-}
-
-.netstat-filter-grid .cbi-value-title {
-    margin: 0;
-    font-weight: 600;
-    color: #25324b;
-}
-
-.netstat-filter-grid .cbi-value-field {
-    width: 100%;
-}
-
-.netstat-filter-grid .cbi-input-select {
-    width: 100%;
 }
 
 .netstat-summary-grid {
@@ -307,30 +257,8 @@ end
 }
 
 @media (max-width: 640px) {
-    .cbi-map > .cbi-section {
-        padding: 12px;
-    }
-
-    .cbi-map > .cbi-section .cbi-section-node > .cbi-value {
-        grid-template-columns: 1fr;
-        gap: 6px;
-    }
-
-    .cbi-map > .cbi-section .cbi-value-title {
-        padding-top: 0;
-    }
-
     .netstat-dashboard {
         padding: 12px;
-    }
-
-    .netstat-filter-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .netstat-filter-grid .cbi-value {
-        grid-template-columns: 1fr;
-        gap: 6px;
     }
 
     .netstat-chart-canvas {
@@ -340,34 +268,7 @@ end
 </style>
 
 <div class="netstat-dashboard">
-    <p class="netstat-dashboard-header"><%:View vnStat history from this page using interface and time-range filters.%></p>
-
-    <form method="get" action="<%=luci.dispatcher.build_url("admin", "tools", "netstat")%>" class="inline netstat-filter-grid">
-        <div class="cbi-value">
-            <label class="cbi-value-title"><%:Interface%></label>
-            <div class="cbi-value-field">
-                <select name="iface" onchange="this.form.submit()" class="cbi-input-select">
-                    <% if #ifaces == 0 then %>
-                        <option value=""><%:No interfaces found%></option>
-                    <% else %>
-                        <% for _, iface in ipairs(ifaces) do %>
-                            <option value="<%=iface%>" <%=current_iface == iface and 'selected="selected"' or ''%>><%=iface%></option>
-                        <% end %>
-                    <% end %>
-                </select>
-            </div>
-        </div>
-
-        <div class="cbi-value">
-            <label class="cbi-value-title"><%:View Mode%></label>
-            <div class="cbi-value-field">
-                <select name="mode" onchange="this.form.submit()" class="cbi-input-select">
-                    <option value="daily" <%=view_mode == "daily" and 'selected="selected"' or ''%>><%:Daily%></option>
-                    <option value="monthly" <%=view_mode == "monthly" and 'selected="selected"' or ''%>><%:Monthly%></option>
-                </select>
-            </div>
-        </div>
-    </form>
+    <p><%:Usage is displayed using the Interface and View Mode selected in the Settings tab.%></p>
 
 <% if current_iface ~= "" and #stats > 0 then %>
     <div class="netstat-summary-grid">
@@ -444,7 +345,7 @@ end
         data: {
             labels: [
                 <% for _, stat in ipairs(stats) do %>
-                    "<%= view_mode == "daily" and stat.date or stat.month %>",
+                    "<%= view_mode == "hourly" and stat.hour or (view_mode == "daily" and stat.date or (view_mode == "monthly" and stat.month or (view_mode == "yearly" and stat.year or stat.date))) %>",
                 <% end %>
             ],
             datasets: [
@@ -516,76 +417,3 @@ end
     </div>
 <% end %>
 </div>
-
-<script>
-(function() {
-    function setupTabs() {
-        const map = document.querySelector('.cbi-map');
-        if (!map)
-            return;
-
-        const sections = [];
-        for (let i = 0; i < map.children.length; i++) {
-            const el = map.children[i];
-            if (el && el.classList && el.classList.contains('cbi-section'))
-                sections.push(el);
-        }
-
-        if (sections.length < 2)
-            return;
-
-        const settingsSection = sections[0];
-        const usageSection = sections[1];
-
-        const tabsBar = document.createElement('div');
-        tabsBar.className = 'netstat-tabs';
-        const usageBtn = document.createElement('button');
-        usageBtn.type = 'button';
-        usageBtn.className = 'netstat-tab-btn active';
-        usageBtn.setAttribute('data-tab', 'usage');
-        usageBtn.textContent = '<%:Network Usage%>';
-
-        const settingsBtn = document.createElement('button');
-        settingsBtn.type = 'button';
-        settingsBtn.className = 'netstat-tab-btn';
-        settingsBtn.setAttribute('data-tab', 'settings');
-        settingsBtn.textContent = '<%:Settings%>';
-
-        tabsBar.appendChild(usageBtn);
-        tabsBar.appendChild(settingsBtn);
-
-        settingsSection.parentNode.insertBefore(tabsBar, settingsSection);
-
-        function activate(tab) {
-            if (tab === 'settings') {
-                settingsSection.style.display = '';
-                usageSection.style.display = 'none';
-                usageBtn.classList.remove('active');
-                settingsBtn.classList.add('active');
-            } else {
-                settingsSection.style.display = 'none';
-                usageSection.style.display = '';
-                settingsBtn.classList.remove('active');
-                usageBtn.classList.add('active');
-            }
-        }
-
-        tabsBar.addEventListener('click', function(ev) {
-            const btn = ev.target.closest('.netstat-tab-btn');
-            if (!btn)
-                return;
-            const tab = btn.getAttribute('data-tab');
-            activate(tab);
-            window.location.hash = tab;
-        });
-
-        const initialTab = (window.location.hash || '').replace('#', '') === 'settings' ? 'settings' : 'usage';
-        activate(initialTab);
-    }
-
-    if (document.readyState === 'loading')
-        document.addEventListener('DOMContentLoaded', setupTabs);
-    else
-        setupTabs();
-})();
-</script>
