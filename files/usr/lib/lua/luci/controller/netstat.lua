@@ -2,8 +2,9 @@ module("luci.controller.netstat", package.seeall)
 
 function index()
     entry({"admin", "tools"}, firstchild(), _("Tools"), 50).dependent = false
-    entry({"admin", "tools", "netstat_config"}, cbi("netstat/config"), _("Netstat Config"), 20).leaf = true
-    entry({"admin", "tools", "vnstat"}, template("vnstat"), _("VnStats"), 30)
+    entry({"admin", "tools", "netstat"}, cbi("netstat/config"), _("Netstat"), 20).leaf = true
+    entry({"admin", "tools", "netstat_config"}, alias("admin", "tools", "netstat")).dependent = true
+    entry({"admin", "tools", "vnstat"}, alias("admin", "tools", "netstat")).dependent = true
     entry({"admin", "tools", "get_netdev_stats"}, call("getNetdevStats"), nil).sysauth = false
 end
 

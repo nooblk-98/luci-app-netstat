@@ -1,0 +1,73 @@
+<%
+local http = require "luci.http"
+local dispatcher = require "luci.dispatcher"
+
+local active_tab = http.formvalue("tab") or "usage"
+local base_url = dispatcher.build_url("admin", "tools", "netstat")
+
+local function tab_url(tab)
+    return base_url .. "?tab=" .. tab
+end
+%>
+
+<style>
+.netstat-tab-wrap {
+    margin: 4px 0 14px;
+}
+
+.netstat-tabmenu {
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.netstat-tabmenu li a {
+    display: block;
+    padding: 9px 14px;
+    border: 1px solid #cfd6e2;
+    border-radius: 6px 6px 0 0;
+    background: #e6ebf2;
+    color: #2f3b52;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.netstat-tabmenu li.active a {
+    background: #f7f9fc;
+    border-bottom-color: #f7f9fc;
+    color: #3659d9;
+}
+
+.netstat-tab-divider {
+    border-bottom: 1px solid #cfd6e2;
+    margin-top: -1px;
+}
+
+<% if active_tab == "settings" then %>
+.cbi-map > .cbi-section:last-of-type {
+    border: 1px solid #dfe3eb;
+    border-radius: 10px;
+    background: #fff;
+    padding: 16px 18px;
+}
+<% end %>
+</style>
+
+<div class="netstat-tab-wrap">
+    <ul class="netstat-tabmenu">
+        <li class="<%=active_tab == "usage" and "active" or ""%>">
+            <a href="<%=tab_url("usage")%>"><%:Network Usage%></a>
+        </li>
+        <li class="<%=active_tab == "settings" and "active" or ""%>">
+            <a href="<%=tab_url("settings")%>"><%:Settings%></a>
+        </li>
+        <li class="<%=active_tab == "about" and "active" or ""%>">
+            <a href="<%=tab_url("about")%>"><%:About%></a>
+        </li>
+    </ul>
+    <div class="netstat-tab-divider"></div>
+</div>
+
+<input type="hidden" name="tab" value="<%=active_tab%>" />

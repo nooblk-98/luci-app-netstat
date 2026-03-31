@@ -1,0 +1,322 @@
+<%
+local sys  = require "luci.sys"
+local http = require "luci.http"
+local uci  = require "luci.model.uci".cursor()
+
+local function to_bytes(value, unit)
+    local multipliers = {
+        ["KiB"] = 1024,
+        ["MiB"] = 1024^2,
+        ["GiB"] = 1024^3,
+        ["TiB"] = 1024^4
+    }
+    return tonumber(value) * (multipliers[unit] or 1)
+end
+
+local function format_date(date_str)
+    local month_names = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"}
+    local m, d, y = date_str:match("(%d%d)/(%d%d)/(%d%d)")
+    if m and d and y then
+        return string.format("%02d %s %02d", tonumber(d), month_names[tonumber(m)], tonumber(y))
+    end
+    return date_str
+end
+
+local function today_label()
+    return os.date("%d %b %y")
+end
+
+local function current_month_label()
+    return os.date("%b '%y")
+end
+
+local function ensure_current_daily(stats)
+    local label = today_label()
+    for _, stat in ipairs(stats) do
+        if stat.date == label then
+            return stats
+        end
+    end
+
+    table.insert(stats, {
+        date = label,
+        rx = 0,
+        tx = 0
+    })
+
+    return stats
+end
+
+local function ensure_current_monthly(stats)
+    local label = current_month_label()
+    for _, stat in ipairs(stats) do
+        if stat.month == label then
+            return stats
+        end
+    end
+
+    table.insert(stats, {
+        month = label,
+        rx = 0,
+        tx = 0
+    })
+
+    return stats
+end
+
+local function get_interfaces()
+    local ifaces = {}
+    local p = io.popen("ls /etc/vnstat/ 2>/dev/null | grep -v '.conf$' | grep -v '.old$'")
+    if p then
+        for iface in p:lines() do
+            iface = iface:match("^%s*(.-)%s*$")
+            if iface ~= "" then
+                table.insert(ifaces, iface)
+            end
+        end
+        p:close()
+    end
+    table.sort(ifaces)
+    return ifaces
+end
+
+local function get_daily_stats(iface)
+    local stats = {}
+    local output = sys.exec("vnstat -i " .. iface .. " --days 2>/dev/null") or ""
+    for date, rx_val, rx_unit, tx_val, tx_unit in
+        output:gmatch("(%d%d/%d%d/%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
+        table.insert(stats, {
+            date = format_date(date),
+            rx = to_bytes(rx_val, rx_unit),
+            tx = to_bytes(tx_val, tx_unit)
+        })
+    end
+    return ensure_current_daily(stats)
+end
+
+local function get_monthly_stats(iface)
+    local stats = {}
+    local output = sys.exec("vnstat -i " .. iface .. " --months 2>/dev/null") or ""
+    for month, rx_val, rx_unit, tx_val, tx_unit in
+        output:gmatch("(%a+%s+'%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
+        table.insert(stats, {
+            month = month,
+            rx = to_bytes(rx_val, rx_unit),
+            tx = to_bytes(tx_val, tx_unit)
+        })
+    end
+    return ensure_current_monthly(stats)
+end
+
+local function format_bytes(value)
+    if value >= 1099511627776 then
+        return string.format("%.2f TB", value / 1099511627776)
+    elseif value >= 1073741824 then
+        return string.format("%.2f GB", value / 1073741824)
+    elseif value >= 1048576 then
+        return string.format("%.2f MB", value / 1048576)
+    elseif value >= 1024 then
+        return string.format("%.2f KB", value / 1024)
+    end
+    return tostring(value) .. " B"
+end
+
+local ifaces = get_interfaces()
+local saved_iface = uci:get("netstats", "@config[0]", "prefer") or ""
+local saved_mode = uci:get("netstats", "@config[0]", "mode") or "daily"
+local current_iface = http.formvalue("iface") or saved_iface or ifaces[1] or ""
+local view_mode = http.formvalue("mode") or saved_mode
+if view_mode ~= "daily" and view_mode ~= "monthly" then
+    view_mode = "daily"
+end
+local stats = {}
+local title = ""
+
+if current_iface ~= "" then
+    if view_mode == "monthly" then
+        stats = get_monthly_stats(current_iface)
+        title = translate("Monthly")
+    else
+        stats = get_daily_stats(current_iface)
+        title = translate("Daily")
+    end
+end
+
+local total_rx = 0
+local total_tx = 0
+for _, stat in ipairs(stats) do
+    total_rx = total_rx + (stat.rx or 0)
+    total_tx = total_tx + (stat.tx or 0)
+end
+%>
+
+<style>
+.netstat-dashboard {
+    border: 1px solid #dfe3eb;
+    border-radius: 10px;
+    background: #fff;
+    padding: 16px 18px;
+    margin-top: 0;
+}
+
+.netstat-chart-wrap {
+    border: 1px solid #dfe4ea;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fff;
+}
+
+.netstat-chart-title {
+    margin: 0 0 10px;
+    font-size: 15px;
+    color: #1f2937;
+}
+
+.netstat-chart-canvas {
+    width: 100%;
+    min-height: 320px;
+}
+
+@media (max-width: 640px) {
+    .netstat-dashboard {
+        padding: 12px;
+    }
+
+    .netstat-chart-canvas {
+        min-height: 280px;
+    }
+}
+</style>
+
+<div class="netstat-dashboard">
+    <p><%:Usage is displayed using the Interface and View Mode selected in the Settings tab.%></p>
+
+<% if current_iface ~= "" and #stats > 0 then %>
+    <div class="netstat-chart-wrap">
+        <h3 class="netstat-chart-title"><%=title%> <%:Usage%> (<%=current_iface%>)</h3>
+        <div class="netstat-chart-canvas">
+            <canvas id="trafficChart"></canvas>
+        </div>
+    </div>
+
+    <script src="/luci-static/resources/netstat/chart.js"></script>
+    <script src="/luci-static/resources/netstat/chartjs-plugin-datalabels"></script>
+    <script>
+    function getTextColor() {
+        const bodyColor = window.getComputedStyle(document.body).backgroundColor;
+        if (!bodyColor) return '#1f2937';
+        const rgb = bodyColor.match(/\d+/g).map(Number);
+        const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+        return brightness < 128 ? '#f3f4f6' : '#1f2937';
+    }
+
+    const textColor = getTextColor();
+    const barHeight = 52;
+    const chartCanvas = document.getElementById('trafficChart');
+    chartCanvas.height = Math.max(320, <%= #stats %> * barHeight);
+    const ctx = chartCanvas.getContext('2d');
+
+    function getGradient(ctx) {
+        const gradient = ctx.createLinearGradient(0, 0, chartCanvas.width, 0);
+        gradient.addColorStop(0, '#84cc16');
+        gradient.addColorStop(1, '#166534');
+        return gradient;
+    }
+
+    function formatBytes(value) {
+        if (value > 1099511627776) return (value / 1099511627776).toFixed(2) + ' TB';
+        if (value > 1073741824) return (value / 1073741824).toFixed(2) + ' GB';
+        if (value > 1048576) return (value / 1048576).toFixed(2) + ' MB';
+        if (value > 1024) return (value / 1024).toFixed(2) + ' KB';
+        return value + ' B';
+    }
+
+    const rxData = [
+        <% for _, stat in ipairs(stats) do %>
+            <%= math.floor(stat.rx) %>,
+        <% end %>
+    ];
+    const txData = [
+        <% for _, stat in ipairs(stats) do %>
+            <%= math.floor(stat.tx) %>,
+        <% end %>
+    ];
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: [
+                <% for _, stat in ipairs(stats) do %>
+                    "<%= view_mode == "daily" and stat.date or stat.month %>",
+                <% end %>
+            ],
+            datasets: [
+                {
+                    label: '<%:Download (RX)%>',
+                    backgroundColor: rxData.map(() => getGradient(ctx)),
+                    data: rxData,
+                    datalabels: {
+                        color: '#f8fafc',
+                        anchor: 'center',
+                        align: 'center',
+                        formatter: function(value) { return formatBytes(value); }
+                    }
+                },
+                {
+                    label: '<%:Upload (TX)%>',
+                    backgroundColor: '#f59e0b',
+                    data: txData,
+                    datalabels: {
+                        color: textColor,
+                        anchor: 'end',
+                        align: 'right',
+                        formatter: function(value) { return formatBytes(value); }
+                    }
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: textColor }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatBytes(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: textColor,
+                        callback: function(value) {
+                            return formatBytes(value);
+                        }
+                    }
+                },
+                y: {
+                    ticks: { color: textColor, autoSkip: false }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+    </script>
+<% else %>
+    <div class="alert-message warning">
+        <% if #ifaces == 0 then %>
+            <%:No vnStat interfaces were found. Make sure vnStat has been initialized.%>
+        <% else %>
+            <%:No data available for %> <%= current_iface %>
+        <% end %>
+    </div>
+<% end %>
+</div>

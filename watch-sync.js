@@ -21,23 +21,42 @@ const CONFIG = {
 // Path mappings: local -> remote
 const PATH_MAPPINGS = [
   {
-    local: 'files\\www\\luci-static\\resources\\netstat',
+    local: 'files/www/luci-static/resources/netstat',
     remote: '/www/luci-static/resources/netstat',
     description: 'NetStat widget CSS and resources'
   },
   {
-    local: 'files\\www\\luci-static\\resources\\view\\status\\include\\08_stats.js',
+    local: 'files/www/luci-static/resources/view/status/include/08_stats.js',
     remote: '/www/luci-static/resources/view/status/include/08_stats.js',
     description: 'Main widget file'
   },
   {
-    local: 'files\\usr\\lib\\lua\\luci\\controller\\netstat.lua',
+    local: 'files/usr/lib/lua/luci/controller/netstat.lua',
     remote: '/usr/lib/lua/luci/controller/netstat.lua',
     description: 'NetStat Lua controller with RPC handler'
+  },
+  {
+    local: 'files/usr/lib/lua/luci/model/cbi/netstat',
+    remote: '/usr/lib/lua/luci/model/cbi/netstat',
+    description: 'NetStat CBI model files'
+  },
+  {
+    local: 'files/usr/lib/lua/luci/view/netstat',
+    remote: '/usr/lib/lua/luci/view/netstat',
+    description: 'NetStat LuCI view templates'
+  },
+  {
+    local: 'files/usr/lib/lua/luci/view/vnstat.htm',
+    remote: '/usr/lib/lua/luci/view/vnstat.htm',
+    description: 'Legacy vnStat view template'
   }
 ];
 
 const BASE_DIR = __dirname;
+
+function normalizeLocalPath(localPath) {
+  return localPath.replace(/[\\/]+/g, path.sep);
+}
 
 class NetStatSync {
   constructor() {
@@ -136,17 +155,17 @@ class NetStatSync {
   }
 
   getRemotePath(localPath) {
-    const relativePath = path.relative(BASE_DIR, localPath);
+    const relativePath = normalizeLocalPath(path.relative(BASE_DIR, localPath));
     
     for (const mapping of PATH_MAPPINGS) {
-      const localNormalized = mapping.local.replace(/\\/g, path.sep);
+      const localNormalized = normalizeLocalPath(mapping.local);
       
       if (mapping.isFile) {
-        if (relativePath.replace(/\\/g, path.sep) === localNormalized) {
+        if (relativePath === localNormalized) {
           return mapping.remote;
         }
       } else {
-        if (relativePath.replace(/\\/g, path.sep).startsWith(localNormalized)) {
+        if (relativePath.startsWith(localNormalized)) {
           const subPath = relativePath.slice(localNormalized.length)
             .replace(/\\/g, '/')
             .replace(/^\//, '');
@@ -222,7 +241,7 @@ class NetStatSync {
 
   startWatching() {
     const watchPaths = PATH_MAPPINGS.map(m => 
-      path.join(BASE_DIR, m.local)
+      path.join(BASE_DIR, normalizeLocalPath(m.local))
     );
 
     console.log('👀 Watching for changes:');
@@ -272,7 +291,7 @@ class NetStatSync {
     let errorCount = 0;
 
     for (const mapping of PATH_MAPPINGS) {
-      const localPath = path.join(BASE_DIR, mapping.local);
+      const localPath = path.join(BASE_DIR, normalizeLocalPath(mapping.local));
       
       try {
         if (!fsSynchronous.existsSync(localPath)) {
