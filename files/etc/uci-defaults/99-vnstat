@@ -4,13 +4,22 @@ chmod 644 /www/luci-static/resources/netstat/chart.js
 
 RESTART_VNSTAT=0
 
-if opkg list-installed | grep -q '^vnstat2'; then
+if command -v opkg >/dev/null 2>&1 && opkg list-installed | grep -q '^vnstat2'; then
     opkg remove vnstat2 && RESTART_VNSTAT=1
+elif command -v apk >/dev/null 2>&1 && apk info -e vnstat2 >/dev/null 2>&1; then
+    apk del vnstat2 && RESTART_VNSTAT=1
 fi
 
 if ! command -v vnstat >/dev/null 2>&1; then
-    opkg update
-    opkg install vnstat || exit 1
+    if command -v opkg >/dev/null 2>&1; then
+        opkg update
+        opkg install vnstat || exit 1
+    elif command -v apk >/dev/null 2>&1; then
+        apk update >/dev/null 2>&1 || true
+        apk add vnstat || exit 1
+    else
+        exit 1
+    fi
     RESTART_VNSTAT=1
 fi
 

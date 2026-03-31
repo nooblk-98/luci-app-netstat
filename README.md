@@ -17,6 +17,8 @@
 ## Overview
 ![Dashboard Preview](images/dash.png)
 
+![Network Preview](images/network.png)
+
 
 **luci-app-netstat** is a modern, feature-rich LuCI application that provides comprehensive network traffic statistics and monitoring for OpenWrt routers. It leverages `vnstat` for accurate traffic monitoring and presents the data through an intuitive web interface.
 
@@ -100,27 +102,13 @@ service vnstat enable
 
 - **Current Usage** - Real-time traffic rates
 - **Daily Statistics** - Traffic breakdown by day
-- **Weekly Reports** - Weekly traffic patterns
 - **Monthly Analysis** - Monthly usage overview
-- **Yearly Trends** - Yearly traffic history
 
 ## Credits
 
 - **Original Development**: [SMALLPROGRAM](https://github.com/smallprogram)
-- **Maintenance**: [dotycat](https://github.com/dotycat)
-- **Chart.js**: [Chart.js Contributors](https://www.chartjs.org/)
-- **vnstat**: [Teemu Toivola](https://humdi.net/vnstat/)
+- **Maintenance**: [nooblk-98](https://github.com/nooblk-98/)
 
-## License
-
-This project is licensed under the **GNU General Public License v3.0** - see the [LICENSE](LICENSE) file for details.
-
-```
-luci-app-netstat is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-```
 
 ## Contributing
 
@@ -135,14 +123,12 @@ Contributions are welcome! Please feel free to:
 For support, issues, or questions:
 - Open an [Issue](../../issues) on GitHub
 - Check existing [Discussions](../../discussions)
-- Contact: support@dotycat.com
+- Contact: liyanagelsofficial@gmail.com
 
 ---
 
 <div align="center">
 
 **Made with ❤️ for the OpenWrt Community**
-
-[⬆ Back to top](#luci-app-netstat)
 
 </div>

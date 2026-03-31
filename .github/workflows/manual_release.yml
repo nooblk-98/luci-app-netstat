@@ -1,17 +1,4 @@
-#
-# Copyright (c) 2022-2023 SMALLPROGRAM <https://github.com/smallprogram>
-# Description: Auto compile
-#
-
-#
-# Fork and compile the latest version yourself using Github Actions
-#   1.Into the repository of your own fork
-#   2.Into the repository [Settings]
-#   3.[Code and automation - Actions] ↓ [General] → [Workflow permissions] ↓  Check the [Read and write permissions] and [Save]
-#   4.Let's take [Actions]
-#
-
-name: "Auto compile with OpenWrt SDK"
+name: "compile with OpenWrt"
 on:
   repository_dispatch:
   workflow_dispatch:
@@ -27,10 +14,12 @@ on:
       - "Makefile"
 env:
   TZ: Asia/Shanghai
+  OPENWRT_TARGET: x86
+  OPENWRT_SUBTARGET: 64
+  PACKAGE_NAME: luci-app-netstat
 
 jobs:
   job_check:
-    if: github.repository == ${{ github.repository }}
     name: Check Version
     runs-on: ubuntu-latest
     outputs:
@@ -66,11 +55,19 @@ jobs:
           name: For openwrt official Snapshots LuCI master
           tag_name: ${{steps.check_version.outputs.latest_version}}
 
-  job_build_netstat:
-    name: Build luci-app-netstat (master)
+  job_build_package:
+    name: Build package (${{ matrix.openwrt_version }}, ${{ matrix.pkg_ext }})
     needs: job_check
     if: needs.job_check.outputs.has_update == 'true'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - openwrt_version: 25.12.1
+            pkg_ext: apk
+          - openwrt_version: 24.10.0
+            pkg_ext: ipk
     steps:
       - name: Install packages
         run: |
@@ -85,60 +82,65 @@ jobs:
         uses: actions/cache@v3
         with:
           path: sdk
-          key: openwrt-sdk-snapshot-x86-64
+          key: openwrt-sdk-${{ matrix.openwrt_version }}-${{ env.OPENWRT_TARGET }}-${{ env.OPENWRT_SUBTARGET }}-${{ matrix.pkg_ext }}
 
       - name: Initialization environment
-        env:
-          url_sdk: https://archive.openwrt.org/releases/24.10.0/targets/x86/64/openwrt-sdk-24.10.0-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
         run: |
           if [ "${{ steps.cache-sdk.outputs.cache-hit }}" != "true" ]; then
-            wget ${{ env.url_sdk }}
-            file_name=$(echo ${{env.url_sdk}} | awk -F/ '{print $NF}')
-            mkdir -p sdk && tar --zstd -xvf $file_name -C ./sdk --strip-components=1
-            cd sdk  
-            echo "src-git base https://github.com/openwrt/openwrt.git;main" > feeds.conf
-            echo "src-git-full packages https://github.com/openwrt/packages.git;master" >> feeds.conf
-            echo "src-git-full luci https://github.com/openwrt/luci.git;master" >> feeds.conf
-            echo "src-git-full routing https://git.openwrt.org/feed/routing.git;master"  >> feeds.conf
+            download_base="https://downloads.openwrt.org/releases/${{ matrix.openwrt_version }}/targets/${{ env.OPENWRT_TARGET }}/${{ env.OPENWRT_SUBTARGET }}"
+            sdk_file=$(wget -qO- "${download_base}/sha256sums" | awk '/openwrt-sdk-${{ matrix.openwrt_version }}-${{ env.OPENWRT_TARGET }}-${{ env.OPENWRT_SUBTARGET }}_.*\.tar\.zst$/{gsub(/^\*/,"",$2); print $2; exit}')
+            if [ -z "${sdk_file}" ]; then
+              echo "::error::Unable to find SDK tarball for OpenWrt ${{ matrix.openwrt_version }}"
+              exit 1
+            fi
+            wget "${download_base}/${sdk_file}"
+            mkdir -p sdk && tar --zstd -xvf "${sdk_file}" -C ./sdk --strip-components=1
+            cd sdk
             ./scripts/feeds update -a
           else
             cd sdk
           fi
-          rm -rf package/downloads/luci-app-netstat
-          git clone -b main https://github.com/${{ github.repository }}.git package/downloads/luci-app-netstat
-          echo "CONFIG_PACKAGE_luci-app-netstat=m" > .config
-          ./scripts/feeds install -d n luci-app-netstat
+          rm -rf package/downloads/${{ env.PACKAGE_NAME }}
+          git clone -b main https://github.com/${{ github.repository }}.git package/downloads/${{ env.PACKAGE_NAME }}
+          echo "CONFIG_PACKAGE_${{ env.PACKAGE_NAME }}=m" > .config
+          ./scripts/feeds install -d n ${{ env.PACKAGE_NAME }}
           make download -j8
 
       - name: Configure (master)
         run: |
           cd sdk
-          ./scripts/feeds install luci-app-netstat
+          ./scripts/feeds install ${{ env.PACKAGE_NAME }}
           echo "CONFIG_ALL_NONSHARED=n" > .config
           echo "CONFIG_ALL_KMODS=n" >> .config
           echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config
           echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
-          echo "CONFIG_PACKAGE_luci-app-netstat=m" >> .config
+          echo "CONFIG_PACKAGE_${{ env.PACKAGE_NAME }}=m" >> .config
           make defconfig
 
       - name: Compile (master)
         id: compile
         run: |
           cd sdk
-          echo "make package/luci-app-netstat/{clean,compile} -j$(nproc)"
-          make package/luci-app-netstat/{clean,compile} -j$(nproc)
-          mv bin/packages/x86_64/base/ ../
+          echo "make package/${{ env.PACKAGE_NAME }}/clean package/${{ env.PACKAGE_NAME }}/compile -j$(nproc)"
+          make package/${{ env.PACKAGE_NAME }}/clean package/${{ env.PACKAGE_NAME }}/compile -j$(nproc)
+          mapfile -t pkg_files < <(find bin/packages -type f -name '${{ env.PACKAGE_NAME }}*.${{ matrix.pkg_ext }}')
+          if [ ${#pkg_files[@]} -eq 0 ]; then
+            echo "::error::No ${{ matrix.pkg_ext }} package generated for ${{ env.PACKAGE_NAME }}"
+            find bin/packages -maxdepth 4 -type f
+            exit 1
+          fi
+          mkdir -p ../artifacts
+          cp "${pkg_files[@]}" ../artifacts/
           rm .config .config.old
           cd ..
           echo "status=success" >> $GITHUB_OUTPUT
-          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
-      - name: Upload (master) ipks to release
+      - name: Upload artifacts to release
         uses: softprops/action-gh-release@v1
         if: steps.compile.outputs.status == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{needs.job_check.outputs.package_version}}
-          files: ${{ env.FIRMWARE }}/base/luci-app-netstat*.*
+          files: artifacts/${{ env.PACKAGE_NAME }}*.${{ matrix.pkg_ext }}

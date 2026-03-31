@@ -1,0 +1,165 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-netstat\n"
+"POT-Creation-Date: 2026-03-31 12:03+0800\n"
+"PO-Revision-Date: 2026-03-31 12:03+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:156
+msgid "Internet"
+msgstr "Internet"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:154
+msgid "Connected"
+msgstr "Connected"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:154
+msgid "Disconnected"
+msgstr "Disconnected"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:159
+msgid "IP"
+msgstr "IP"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:202
+msgid "Loading network stats..."
+msgstr "Loading network stats..."
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:230
+msgid "download"
+msgstr "download"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:231
+msgid "upload"
+msgstr "upload"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:235
+msgid "downloaded"
+msgstr "downloaded"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:236
+msgid "uploaded"
+msgstr "uploaded"
+
+#: luasrc/controller/netstat.lua:5
+msgid "Netstat Config"
+msgstr "Netstat Config"
+
+#: luasrc/controller/netstat.lua:6
+msgid "VnStats"
+msgstr "VnStats"
+
+#: luasrc/model/cbi/netstat/config.lua:4
+msgid "Netstat"
+msgstr "Netstat"
+
+#: luasrc/model/cbi/netstat/config.lua:5
+msgid "Select your preferred primary WAN interface."
+msgstr "Select your preferred primary WAN interface."
+
+#: luasrc/model/cbi/netstat/config.lua:8
+msgid "Settings"
+msgstr "Settings"
+
+#: luasrc/model/cbi/netstat/config.lua:11
+msgid "Traffic Backend"
+msgstr "Traffic Backend"
+
+#: luasrc/model/cbi/netstat/config.lua:13
+msgid "Normal (Real-time)"
+msgstr "Normal (Real-time)"
+
+#: luasrc/model/cbi/netstat/config.lua:14
+msgid "vnStat (Historical, Delayed)"
+msgstr "vnStat (Historical, Delayed)"
+
+#: luasrc/model/cbi/netstat/config.lua:16
+msgid "Display Mode"
+msgstr "Display Mode"
+
+#: luasrc/model/cbi/netstat/config.lua:19
+msgid "Daily Usage"
+msgstr "Daily Usage"
+
+#: luasrc/model/cbi/netstat/config.lua:20
+msgid "Monthly Usage"
+msgstr "Monthly Usage"
+
+#: luasrc/model/cbi/netstat/config.lua:22
+msgid "WAN Interface"
+msgstr "WAN Interface"
+
+#: luasrc/model/cbi/netstat/config.lua:23
+msgid ""
+"Select the interface for tracking WAN traffic. Leave blank to auto-detect."
+"<br><br><b>Backend Mode Explanation:</b><br>"
+"<ul>"
+"<li><b>vnStat</b>: Uses the vnStat database. It provides daily/monthly usage, but traffic updates are delayed depending on vnStat interval.</li>"
+"<li><b>Normal</b>: Reads directly from system interfaces in real time (no delay), but does not keep history.</li>"
+"</ul>"
+msgstr ""
+"Select the interface for tracking WAN traffic. Leave blank to auto-detect."
+"<br><br><b>Backend Mode Explanation:</b><br>"
+"<ul>"
+"<li><b>vnStat</b>: Uses the vnStat database. It provides daily/monthly usage, but traffic updates are delayed depending on vnStat interval.</li>"
+"<li><b>Normal</b>: Reads directly from system interfaces in real time (no delay), but does not keep history.</li>"
+"</ul>"
+
+#: luasrc/model/cbi/netstat/config.lua:31
+msgid "Auto detect"
+msgstr "Auto detect"
+
+#: luasrc/model/cbi/netstat/config.lua:41
+msgid "Reset vnStat Stats"
+msgstr "Reset vnStat Stats"
+
+#: luasrc/model/cbi/netstat/config.lua:42
+msgid "Reset Database"
+msgstr "Reset Database"
+
+#: luasrc/model/cbi/netstat/config.lua:61
+msgid "vnStat database has been reset successfully for all interfaces."
+msgstr "vnStat database has been reset successfully for all interfaces."
+
+#: luasrc/view/vnstat.htm:78
+msgid "Daily"
+msgstr "Daily"
+
+#: luasrc/view/vnstat.htm:81
+msgid "Monthly"
+msgstr "Monthly"
+
+#: luasrc/view/vnstat.htm:186
+msgid "Download (RX)"
+msgstr "Download (RX)"
+
+#: luasrc/view/vnstat.htm:197
+msgid "Upload (TX)"
+msgstr "Upload (TX)"
+
+# 已存在的翻译（保留）
+#: luasrc/view/vnstat.htm:87
+msgid "Network Usage"
+msgstr "Network Usage"
+
+#: luasrc/view/vnstat.htm:93
+msgid "Interface"
+msgstr "Interface"
+
+#: luasrc/view/vnstat.htm:108
+msgid "View Mode"
+msgstr "View Mode"
+
+#: luasrc/view/vnstat.htm:97
+msgid "No interfaces found"
+msgstr "No interfaces found"
+
+#: luasrc/view/vnstat.htm:245
+msgid "No data available for"
+msgstr "No data available for"
