@@ -2,11 +2,12 @@ local net = require "luci.model.network"
 local sys = require "luci.sys"
 
 local m = Map("netstats", translate("Netstat"),
-    translate("Select your preferred primary WAN interface.")
+    translate("Configure traffic monitoring and view usage history from a single page.")
 )
 
 local s = m:section(TypedSection, "config", translate("Settings"))
 s.anonymous = true
+s.addremove = false
 
 local backend = s:option(ListValue, "backend", translate("Traffic Backend"))
 backend.default = "normal"
@@ -60,5 +61,8 @@ function reset.write(self, section)
 
     m.message = translate("vnStat database has been reset successfully for all interfaces.")
 end
+
+local usage = m:section(SimpleSection, translate("Network Usage"))
+usage.template = "netstat/usage"
 
 return m
