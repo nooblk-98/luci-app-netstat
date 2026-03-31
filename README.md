@@ -110,8 +110,6 @@ service vnstat enable
 
 - **Original Development**: [SMALLPROGRAM](https://github.com/smallprogram)
 - **Maintenance**: [nooblk-98](https://github.com/nooblk-98/)
-- **Chart.js**: [Chart.js Contributors](https://www.chartjs.org/)
-- **vnstat**: [Teemu Toivola](https://humdi.net/vnstat/)
 
 ## License
 
