@@ -23,11 +23,8 @@ if active_tab == "settings" then
 
     local mode = s:option(ListValue, "mode", translate("View Mode"))
     mode.default = "daily"
-    mode:value("hourly", translate("Hourly Usage"))
     mode:value("daily", translate("Daily Usage"))
     mode:value("monthly", translate("Monthly Usage"))
-    mode:value("yearly", translate("Yearly Usage"))
-    mode:value("top", translate("Top Days"))
     mode.description = translate("Used by the Network Usage tab.")
 
     local iface = s:option(ListValue, "prefer", translate("Interface"))
@@ -69,6 +66,9 @@ if active_tab == "settings" then
 
         m.message = translate("vnStat database has been reset successfully for all interfaces.")
     end
+elseif active_tab == "about" then
+    local about = m:section(SimpleSection, translate("About"))
+    about.template = "netstat/about"
 else
     local usage = m:section(SimpleSection, translate("Network Usage"))
     usage.template = "netstat/usage"

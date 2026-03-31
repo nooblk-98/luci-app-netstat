@@ -109,48 +109,6 @@ local function get_monthly_stats(iface)
     return ensure_current_monthly(stats)
 end
 
-local function get_hourly_stats(iface)
-    local stats = {}
-    local output = sys.exec("vnstat -i " .. iface .. " --hours 2>/dev/null") or ""
-    for label, rx_val, rx_unit, tx_val, tx_unit in
-        output:gmatch("(%d%d/%d%d/%d%d%s+%d%d:%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
-        table.insert(stats, {
-            hour = label,
-            rx = to_bytes(rx_val, rx_unit),
-            tx = to_bytes(tx_val, tx_unit)
-        })
-    end
-    return stats
-end
-
-local function get_yearly_stats(iface)
-    local stats = {}
-    local output = sys.exec("vnstat -i " .. iface .. " --years 2>/dev/null") or ""
-    for year, rx_val, rx_unit, tx_val, tx_unit in
-        output:gmatch("(%d%d%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
-        table.insert(stats, {
-            year = year,
-            rx = to_bytes(rx_val, rx_unit),
-            tx = to_bytes(tx_val, tx_unit)
-        })
-    end
-    return stats
-end
-
-local function get_top_stats(iface)
-    local stats = {}
-    local output = sys.exec("vnstat -i " .. iface .. " --top10 2>/dev/null") or ""
-    for date, rx_val, rx_unit, tx_val, tx_unit in
-        output:gmatch("(%d%d/%d%d/%d%d)%s+([%d%.]+)%s+([KMGT]iB)%s+|%s+([%d%.]+)%s+([KMGT]iB)") do
-        table.insert(stats, {
-            date = format_date(date),
-            rx = to_bytes(rx_val, rx_unit),
-            tx = to_bytes(tx_val, tx_unit)
-        })
-    end
-    return stats
-end
-
 local function format_bytes(value)
     if value >= 1099511627776 then
         return string.format("%.2f TB", value / 1099511627776)
@@ -169,22 +127,16 @@ local saved_iface = uci:get("netstats", "@config[0]", "prefer") or ""
 local saved_mode = uci:get("netstats", "@config[0]", "mode") or "daily"
 local current_iface = http.formvalue("iface") or saved_iface or ifaces[1] or ""
 local view_mode = http.formvalue("mode") or saved_mode
+if view_mode ~= "daily" and view_mode ~= "monthly" then
+    view_mode = "daily"
+end
 local stats = {}
 local title = ""
 
 if current_iface ~= "" then
-    if view_mode == "hourly" then
-        stats = get_hourly_stats(current_iface)
-        title = translate("Hourly")
-    elseif view_mode == "monthly" then
+    if view_mode == "monthly" then
         stats = get_monthly_stats(current_iface)
         title = translate("Monthly")
-    elseif view_mode == "yearly" then
-        stats = get_yearly_stats(current_iface)
-        title = translate("Yearly")
-    elseif view_mode == "top" then
-        stats = get_top_stats(current_iface)
-        title = translate("Top Days")
     else
         stats = get_daily_stats(current_iface)
         title = translate("Daily")
@@ -206,36 +158,6 @@ end
     background: #fff;
     padding: 16px 18px;
     margin-top: 0;
-}
-
-.netstat-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
-    margin-bottom: 16px;
-}
-
-.netstat-summary-card {
-    border: 1px solid #dfe4ea;
-    border-radius: 8px;
-    background: #fff;
-    padding: 10px 12px;
-}
-
-.netstat-summary-label {
-    display: block;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    color: #697386;
-    margin-bottom: 4px;
-}
-
-.netstat-summary-value {
-    display: block;
-    font-size: 15px;
-    color: #1f2937;
-    font-weight: 600;
 }
 
 .netstat-chart-wrap {
@@ -271,25 +193,6 @@ end
     <p><%:Usage is displayed using the Interface and View Mode selected in the Settings tab.%></p>
 
 <% if current_iface ~= "" and #stats > 0 then %>
-    <div class="netstat-summary-grid">
-        <div class="netstat-summary-card">
-            <span class="netstat-summary-label"><%:Interface%></span>
-            <span class="netstat-summary-value"><%=current_iface%></span>
-        </div>
-        <div class="netstat-summary-card">
-            <span class="netstat-summary-label"><%:Data Points%></span>
-            <span class="netstat-summary-value"><%=#stats%></span>
-        </div>
-        <div class="netstat-summary-card">
-            <span class="netstat-summary-label"><%:Total Download%></span>
-            <span class="netstat-summary-value"><%=format_bytes(total_rx)%></span>
-        </div>
-        <div class="netstat-summary-card">
-            <span class="netstat-summary-label"><%:Total Upload%></span>
-            <span class="netstat-summary-value"><%=format_bytes(total_tx)%></span>
-        </div>
-    </div>
-
     <div class="netstat-chart-wrap">
         <h3 class="netstat-chart-title"><%=title%> <%:Usage%> (<%=current_iface%>)</h3>
         <div class="netstat-chart-canvas">
@@ -345,7 +248,7 @@ end
         data: {
             labels: [
                 <% for _, stat in ipairs(stats) do %>
-                    "<%= view_mode == "hourly" and stat.hour or (view_mode == "daily" and stat.date or (view_mode == "monthly" and stat.month or (view_mode == "yearly" and stat.year or stat.date))) %>",
+                    "<%= view_mode == "daily" and stat.date or stat.month %>",
                 <% end %>
             ],
             datasets: [
