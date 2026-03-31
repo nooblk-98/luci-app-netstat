@@ -75,10 +75,10 @@ local stats, title  = {}, ""
 if current_iface ~= "" then
     if view_mode == "daily" then
         stats = get_daily_stats(current_iface)
-        title = "Daily"
+        title = "<%:Daily%>"
     else
         stats = get_monthly_stats(current_iface)
-        title = "Monthly"
+        title = "<%:Monthly%>"
     end
 end
 %>
@@ -183,7 +183,7 @@ end
                 ],
                 datasets: [
                     {
-                        label: 'Download (RX)',
+                        label: '<%:Download (RX)%>',
                         backgroundColor: rxData.map(v => getGradient(ctx, v, maxValue)),
                         data: rxData,
                         datalabels: {
@@ -194,7 +194,7 @@ end
                         }
                     },
                     {
-                        label: 'Upload (TX)',
+                        label: '<%:Upload (TX)%>',
                         backgroundColor: 'orange',
                         data: txData,
                         datalabels: {

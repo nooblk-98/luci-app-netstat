@@ -1,0 +1,165 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-netstat\n"
+"POT-Creation-Date: 2026-03-31 12:03+0800\n"
+"PO-Revision-Date: 2026-03-31 12:03+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_Hans\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:156
+msgid "Internet"
+msgstr "互联网"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:154
+msgid "Connected"
+msgstr "已连接"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:154
+msgid "Disconnected"
+msgstr "已断开"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:159
+msgid "IP"
+msgstr "IP地址"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:202
+msgid "Loading network stats..."
+msgstr "正在加载网络统计..."
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:230
+msgid "download"
+msgstr "下载"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:231
+msgid "upload"
+msgstr "上传"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:235
+msgid "downloaded"
+msgstr "已下载"
+
+#: htdocs/luci-static/resources/view/status/include/08_stats.js:236
+msgid "uploaded"
+msgstr "已上传"
+
+#: luasrc/controller/netstat.lua:5
+msgid "Netstat Config"
+msgstr "网络统计配置"
+
+#: luasrc/controller/netstat.lua:6
+msgid "VnStats"
+msgstr "流量统计"
+
+#: luasrc/model/cbi/netstat/config.lua:4
+msgid "Netstat"
+msgstr "网络统计"
+
+#: luasrc/model/cbi/netstat/config.lua:5
+msgid "Select your preferred primary WAN interface."
+msgstr "选择您首选的主要WAN接口。"
+
+#: luasrc/model/cbi/netstat/config.lua:8
+msgid "Settings"
+msgstr "设置"
+
+#: luasrc/model/cbi/netstat/config.lua:11
+msgid "Traffic Backend"
+msgstr "流量后端"
+
+#: luasrc/model/cbi/netstat/config.lua:13
+msgid "Normal (Real-time)"
+msgstr "普通（实时）"
+
+#: luasrc/model/cbi/netstat/config.lua:14
+msgid "vnStat (Historical, Delayed)"
+msgstr "vnStat（历史，延迟）"
+
+#: luasrc/model/cbi/netstat/config.lua:16
+msgid "Display Mode"
+msgstr "显示模式"
+
+#: luasrc/model/cbi/netstat/config.lua:19
+msgid "Daily Usage"
+msgstr "每日使用"
+
+#: luasrc/model/cbi/netstat/config.lua:20
+msgid "Monthly Usage"
+msgstr "每月使用"
+
+#: luasrc/model/cbi/netstat/config.lua:22
+msgid "WAN Interface"
+msgstr "WAN接口"
+
+#: luasrc/model/cbi/netstat/config.lua:23
+msgid ""
+"Select the interface for tracking WAN traffic. Leave blank to auto-detect."
+"<br><br><b>Backend Mode Explanation:</b><br>"
+"<ul>"
+"<li><b>vnStat</b>: Uses the vnStat database. It provides daily/monthly usage, but traffic updates are delayed depending on vnStat interval.</li>"
+"<li><b>Normal</b>: Reads directly from system interfaces in real time (no delay), but does not keep history.</li>"
+"</ul>"
+msgstr ""
+"选择用于跟踪WAN流量的接口。留空以自动检测。"
+"<br><br><b>后端模式说明：</b><br>"
+"<ul>"
+"<li><b>vnStat</b>：使用vnStat数据库。提供每日/每月使用情况，但流量更新会根据vnStat间隔延迟。</li>"
+"<li><b>普通</b>：实时直接从系统接口读取（无延迟），但不保存历史记录。</li>"
+"</ul>"
+
+#: luasrc/model/cbi/netstat/config.lua:31
+msgid "Auto detect"
+msgstr "自动检测"
+
+#: luasrc/model/cbi/netstat/config.lua:41
+msgid "Reset vnStat Stats"
+msgstr "重置vnStat统计"
+
+#: luasrc/model/cbi/netstat/config.lua:42
+msgid "Reset Database"
+msgstr "重置数据库"
+
+#: luasrc/model/cbi/netstat/config.lua:61
+msgid "vnStat database has been reset successfully for all interfaces."
+msgstr "所有接口的vnStat数据库已成功重置。"
+
+#: luasrc/view/vnstat.htm:78
+msgid "Daily"
+msgstr "每日"
+
+#: luasrc/view/vnstat.htm:81
+msgid "Monthly"
+msgstr "每月"
+
+#: luasrc/view/vnstat.htm:186
+msgid "Download (RX)"
+msgstr "下载 (接收)"
+
+#: luasrc/view/vnstat.htm:197
+msgid "Upload (TX)"
+msgstr "上传 (发送)"
+
+# 已存在的翻译（保留）
+#: luasrc/view/vnstat.htm:87
+msgid "Network Usage"
+msgstr "网络使用情况"
+
+#: luasrc/view/vnstat.htm:93
+msgid "Interface"
+msgstr "接口"
+
+#: luasrc/view/vnstat.htm:108
+msgid "View Mode"
+msgstr "查看模式"
+
+#: luasrc/view/vnstat.htm:97
+msgid "No interfaces found"
+msgstr "未找到接口"
+
+#: luasrc/view/vnstat.htm:245
+msgid "No data available for"
+msgstr "没有可用数据"

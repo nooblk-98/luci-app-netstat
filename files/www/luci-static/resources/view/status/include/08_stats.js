@@ -153,7 +153,7 @@ function createStatusCard(status, ip) {
 	const isConnected = status === 'Connected';
 	const statusText = isConnected ? _('Connected') : _('Disconnected');
 	return E('div', { class: 'netstat-box netstat-center ' + (isConnected ? 'is-up' : 'is-down') }, [
-		E('div', { class: 'netstat-center-title' }, _('INTERNET')),
+		E('div', { class: 'netstat-center-title' }, _('Internet')),
 		E('div', { class: 'netstat-center-status' }, statusText),
 		E('div', { class: 'netstat-center-sep' }, ''),
 		E('div', { class: 'netstat-center-title' }, _('IP')),
