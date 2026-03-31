@@ -5,7 +5,7 @@ local m = Map("netstats", translate("Netstat"),
     translate("Configure traffic monitoring and view usage history from a single page.")
 )
 
-local s = m:section(TypedSection, "config", translate("Settings"))
+local s = m:section(TypedSection, "config", translate("Monitoring Settings"))
 s.anonymous = true
 s.addremove = false
 
@@ -14,7 +14,7 @@ backend.default = "normal"
 backend:value("normal", translate("Normal (Real-time)"))
 backend:value("vnstat", translate("vnStat (Historical, Delayed)"))
 
-local mode = s:option(ListValue, "mode", translate("Display Mode"))
+local mode = s:option(ListValue, "mode", translate("Default Usage View"))
 mode.default = "daily"
 mode:depends("backend", "vnstat")
 mode:value("daily", translate("Daily Usage"))
@@ -22,12 +22,10 @@ mode:value("monthly", translate("Monthly Usage"))
 
 local iface = s:option(ListValue, "prefer", translate("WAN Interface"))
 iface.description = translate(
-    "Select the interface for tracking WAN traffic. Leave blank to auto-detect." ..
-    "<br><br><b>Backend Mode Explanation:</b><br>" ..
-    "<ul>" ..
-    "<li><b>vnStat</b>: Uses the vnStat database. It provides daily/monthly usage, but traffic updates are delayed depending on vnStat interval.</li>" ..
-    "<li><b>Normal</b>: Reads directly from system interfaces in real time (no delay), but does not keep history.</li>" ..
-    "</ul>"
+    "Track WAN traffic on this interface. Leave this empty to auto-detect." ..
+    "<br><br><strong>Backend notes</strong>" ..
+    "<br>- vnStat: stores daily and monthly history (updates may be delayed)." ..
+    "<br>- Normal: real-time traffic only (no stored history)."
 )
 iface:value("", translate("Auto detect"))
 
@@ -39,7 +37,7 @@ for _, dev in ipairs(netm:get_interfaces()) do
     end
 end
 
-local reset = s:option(Button, "_reset", translate("Reset vnStat Stats"))
+local reset = s:option(Button, "_reset", translate("Reset Historical Data"))
 reset.inputtitle = translate("Reset Database")
 reset.inputstyle = "reset"
 
