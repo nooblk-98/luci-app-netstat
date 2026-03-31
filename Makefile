@@ -4,7 +4,7 @@ PKG_NAME:=luci-app-netstat
 PKG_VERSION:=1.0.7
 PKG_RELEASE:=10
 
-PKG_MAINTAINER:=dotycat <support@dotycat.com>
+PKG_MAINTAINER:=NoobLK <liyanagelsofficial@g.com>
 PKG_LICENSE:=GPL-3.0
 
 LUCI_TITLE:=NET Stats
