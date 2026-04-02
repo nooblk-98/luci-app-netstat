@@ -9,16 +9,5 @@
     "depends": {
       "acl": [ "luci-app-netstat" ]
     }
-  },
-  "admin/tools/vnstat": {
-    "title": "Netstat",
-    "order": 20,
-    "action": {
-      "type": "alias",
-      "path": "admin/tools/netstat"
-    },
-    "depends": {
-      "acl": [ "luci-app-netstat" ]
-    }
   }
 }
