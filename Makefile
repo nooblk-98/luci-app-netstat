@@ -1,10 +1,10 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-netstat
-PKG_VERSION:=1.0.8
+PKG_VERSION:=1.0.9
 PKG_RELEASE:=11
 
-PKG_MAINTAINER:=NoobLK <liyanagelsofficial@g.com>
+PKG_MAINTAINER:=NoobLK <liyanagelsofficial@gmail.com>
 PKG_LICENSE:=GPL-3.0
 
 LUCI_TITLE:=NET Stats
