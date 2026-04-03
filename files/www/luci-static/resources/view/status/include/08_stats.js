@@ -45,7 +45,6 @@ let sparkTx = new Array(SPARK_LEN).fill(0);
 
 		const link       = document.createElement('link');
 		link.rel         = 'stylesheet';
-		link.dataset.netstatssCss = '1';
 		link.setAttribute('data-netstat-css', '1');
 		link.href        = '/luci-static/resources/netstat/' + file + '?t=' + Date.now();
 		document.head.appendChild(link);
@@ -226,7 +225,6 @@ function createRateBox(label, value, unit, extraClass, colorVar, sparkValues, pe
 function createStatBox(label, value, unit, extraClass) {
 	const cls = 'netstat-box' + (extraClass ? ' ' + extraClass : '');
 	const box = E('div', { class: cls }, [
-		E('div', { class: 'ns-stat-icon-row' }),   // icon placeholder
 		E('div', { class: 'ns-stat-value-row' }, [
 			E('div', { class: 'netstat-number' }, value),
 			unit ? E('div', { class: 'netstat-unit' }, unit) : null
@@ -269,10 +267,6 @@ function svgIcon(path, color) {
 function iconUptime() {
 	return svgIcon('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', 'var(--ns-muted)');
 }
-// cpu/chip icon
-function iconCPU() {
-	return svgIcon('<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>', 'var(--ns-cpu-color)');
-}
 // database/memory icon
 function iconMem() {
 	return svgIcon('<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>', 'var(--ns-mem-color)');
@@ -284,12 +278,6 @@ function iconTemp() {
 // hard-drive/disk icon
 function iconDisk() {
 	return svgIcon('<line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/>', 'var(--ns-disk-color)');
-}
-
-function makeBar(pct, id) {
-	const fill = E('div', { class: 'ns-bar-fill', id: id });
-	fill.style.width = Math.min(100, Math.max(0, pct)) + '%';
-	return E('div', { class: 'ns-bar-wrap' }, [fill]);
 }
 
 // Pill-style bar: filled background + "used MB / total MB (pct%)" text overlay
@@ -400,7 +388,7 @@ function updateContainer(container, data, dt) {
 	const peakTxFmt = formatRate(peakTx * 8);
 
 	const boxes = container.querySelectorAll('.netstat-box');
-	if (boxes.length < 5) return false; // stale, rebuild
+	if (boxes.length < 7) return false; // stale, rebuild
 
 	// download rate box
 	patchText(container, '.is-download .netstat-number', rxRate.number);
@@ -571,7 +559,7 @@ return baseclass.extend({
 						last_time  = now2;
 
 						if (_container && _container.isConnected) {
-							const ok = updateContainer(_container, {
+							updateContainer(_container, {
 								stats:      (r && r.stats)       || {},
 								ip:         (r && r.ip)          || 'N/A',
 								status:     (r && r.status)      || 'Disconnected',
@@ -586,7 +574,6 @@ return baseclass.extend({
 								disk_total: (r && r.disk_total)  || 0,
 								preferred:  []
 							}, dt2);
-							if (ok) return;
 						}
 					})
 					.catch(() => {})

@@ -19,7 +19,6 @@
   --ns-summary-bg:   #f7f9fc;
   --ns-badge-bg:     #e0f2fe;
   --ns-badge-text:   #0369a1;
-  --ns-cpu-color:    #d97706;
   --ns-mem-color:    #7c3aed;
   --ns-temp-color:   #dc2626;
   --ns-disk-color:   #0891b2;
@@ -166,11 +165,7 @@
   .netstat-box.is-uploaded   { border-color: #a8c8f0 !important; }
 }
 
-/* ── Stat box icon row ────────────────────────────────────────────────────────── */
-.ns-stat-icon-row {
-  display: none !important; /* hidden, reserved for future use */
-}
-
+/* ── Stat box value row ──────────────────────────────────────────────────────── */
 .ns-stat-value-row {
   display: flex !important;
   align-items: baseline !important;
@@ -326,24 +321,6 @@
 
 #ns-mem-bar  { background: var(--ns-mem-color)  !important; }
 #ns-disk-bar { background: var(--ns-disk-color) !important; }
-
-/* ── Legacy thin bar (kept for cpu bar if ever re-added) ─────────────────────── */
-.ns-bar-wrap {
-  height: 5px !important;
-  background: var(--ns-bar-bg) !important;
-  border-radius: 3px !important;
-  margin-top: 4px !important;
-  overflow: hidden !important;
-}
-
-.ns-bar-fill {
-  height: 100% !important;
-  border-radius: 3px !important;
-  transition: width 0.5s ease !important;
-  min-width: 0 !important;
-}
-
-#ns-cpu-bar  { background: var(--ns-cpu-color)  !important; }
 
 /* ── Temperature value colour ───────────────────────────────────────────────── */
 .ns-temp-val { color: var(--ns-temp-color) !important; }
