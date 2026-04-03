@@ -23,6 +23,8 @@
   --ns-badge-text:   #93c5fd;
   --ns-cpu-color:    #fbbf24;
   --ns-mem-color:    #a78bfa;
+  --ns-temp-color:   #f87171;
+  --ns-disk-color:   #22d3ee;
   --ns-bar-bg:       #374151;
 }
 

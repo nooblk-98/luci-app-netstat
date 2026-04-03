@@ -154,11 +154,52 @@ function getNetdevStats()
     local mem_used_mb  = math.floor((mem_total - mem_available) / 1024 + 0.5)
     local mem_total_mb = math.floor(mem_total / 1024 + 0.5)
 
+    -- ── Disk space (root filesystem) ──────────────────────────────────────────
+    local disk_pct, disk_used_mb, disk_total_mb = 0, 0, 0
+    local df = read_cmd("df -k / 2>/dev/null | awk 'NR==2{print $2,$3}'")
+    if df then
+        local dtotal, dused = df:match("^(%d+)%s+(%d+)$")
+        dtotal = tonumber(dtotal) or 0
+        dused  = tonumber(dused)  or 0
+        if dtotal > 0 then
+            disk_pct      = math.floor(dused / dtotal * 100 + 0.5)
+            disk_used_mb  = math.floor(dused  / 1024 + 0.5)
+            disk_total_mb = math.floor(dtotal / 1024 + 0.5)
+        end
+    end
+
+    -- ── CPU temperature ───────────────────────────────────────────────────────
+    local cpu_temp = nil
+    -- Try common thermal zone paths
+    local temp_paths = {
+        "/sys/class/thermal/thermal_zone0/temp",
+        "/sys/class/thermal/thermal_zone1/temp",
+        "/sys/devices/virtual/thermal/thermal_zone0/temp",
+    }
+    for _, path in ipairs(temp_paths) do
+        local tf = io.open(path, "r")
+        if tf then
+            local val = tf:read("*l")
+            tf:close()
+            local t = tonumber(val)
+            if t and t > 0 then
+                -- values > 1000 are in millidegrees
+                if t > 1000 then t = t / 1000 end
+                cpu_temp = math.floor(t + 0.5)
+                break
+            end
+        end
+    end
+
     luci.http.prepare_content("application/json")
     luci.http.write_json({ stats = stats, ip = ip, status = status,
-                           uptime   = uptime_sec,
-                           cpu_pct  = cpu_pct,
-                           mem_pct  = mem_pct,
-                           mem_used = mem_used_mb,
-                           mem_total = mem_total_mb })
+                           uptime      = uptime_sec,
+                           cpu_pct     = cpu_pct,
+                           cpu_temp    = cpu_temp,
+                           mem_pct     = mem_pct,
+                           mem_used    = mem_used_mb,
+                           mem_total   = mem_total_mb,
+                           disk_pct    = disk_pct,
+                           disk_used   = disk_used_mb,
+                           disk_total  = disk_total_mb })
 end
