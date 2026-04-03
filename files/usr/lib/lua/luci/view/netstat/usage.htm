@@ -3,18 +3,17 @@ local sys  = require "luci.sys"
 local http = require "luci.http"
 local uci  = require "luci.model.uci".cursor()
 
--- ── Helpers ────────────────────────────────────────────────────────────────────
 local function to_bytes(value, unit)
-    local m = { KiB=1024, MiB=1024^2, GiB=1024^3, TiB=1024^4 }
+    local m = { KiB=1024, MiB=1048576, GiB=1073741824, TiB=1099511627776 }
     return tonumber(value) * (m[unit] or 1)
 end
 
 local function format_date(date_str)
     local months = {"Jan","Feb","Mar","Apr","May","Jun",
                     "Jul","Aug","Sep","Oct","Nov","Dec"}
-    local m, d, y = date_str:match("(%d%d)/(%d%d)/(%d%d)")
-    if m and d and y then
-        return string.format("%02d %s %02d", tonumber(d), months[tonumber(m)], tonumber(y))
+    local mo, d, y = date_str:match("(%d%d)/(%d%d)/(%d%d)")
+    if mo and d and y then
+        return string.format("%02d %s %02d", tonumber(d), months[tonumber(mo)], tonumber(y))
     end
     return date_str
 end
@@ -38,7 +37,7 @@ end
 
 local function get_interfaces()
     local ifaces = {}
-    local p = io.popen("ls /etc/vnstat/ 2>/dev/null | grep -Ev '\\.(conf|old)$'")
+    local p = io.popen("ls /etc/vnstat/ 2>/dev/null | grep -v '.conf$' | grep -v '.old$'")
     if p then
         for iface in p:lines() do
             iface = iface:match("^%s*(.-)%s*$")
@@ -79,20 +78,19 @@ local function get_monthly_stats(iface)
 end
 
 local function fmt_bytes(v)
-    if v >= 1099511627776 then return string.format("%.2f TB", v/1099511627776)
-    elseif v >= 1073741824 then return string.format("%.2f GB", v/1073741824)
-    elseif v >= 1048576    then return string.format("%.2f MB", v/1048576)
-    elseif v >= 1024       then return string.format("%.2f KB", v/1024)
+    if     v >= 1099511627776 then return string.format("%.2f TB", v/1099511627776)
+    elseif v >= 1073741824    then return string.format("%.2f GB", v/1073741824)
+    elseif v >= 1048576       then return string.format("%.2f MB", v/1048576)
+    elseif v >= 1024          then return string.format("%.2f KB", v/1024)
     end
     return tostring(v) .. " B"
 end
 
--- ── Load data ──────────────────────────────────────────────────────────────────
-local ifaces       = get_interfaces()
-local saved_iface  = uci:get("netstats", "@config[0]", "prefer") or ""
-local saved_mode   = uci:get("netstats", "@config[0]", "mode")   or "daily"
-local cur_iface    = http.formvalue("iface") or saved_iface or ifaces[1] or ""
-local view_mode    = http.formvalue("mode")  or saved_mode
+local ifaces      = get_interfaces()
+local saved_iface = uci:get("netstats", "@config[0]", "prefer") or ""
+local saved_mode  = uci:get("netstats", "@config[0]", "mode")   or "daily"
+local cur_iface   = http.formvalue("iface") or saved_iface or ifaces[1] or ""
+local view_mode   = http.formvalue("mode")  or saved_mode
 if view_mode ~= "daily" and view_mode ~= "monthly" then view_mode = "daily" end
 
 local stats, title = {}, ""
@@ -106,7 +104,6 @@ if cur_iface ~= "" then
     end
 end
 
--- Totals for summary bar
 local total_rx, total_tx = 0, 0
 for _, s in ipairs(stats) do
     total_rx = total_rx + (s.rx or 0)
@@ -114,90 +111,7 @@ for _, s in ipairs(stats) do
 end
 %>
 
-<style>
-/* ── Scoped to .netstat-dashboard to avoid leaking into LuCI ── */
-.netstat-dashboard {
-    border: 1px solid var(--ns-border, #dfe3eb);
-    border-radius: 10px;
-    background: var(--ns-bg, #fff);
-    padding: 16px 18px;
-}
-
-/* Summary bar ── */
-.netstat-summary {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-    padding: 10px 14px;
-    background: var(--ns-summary-bg, #f7f9fc);
-    border: 1px solid var(--ns-border, #dfe3eb);
-    border-radius: 8px;
-    font-size: 13px;
-}
-.netstat-summary-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-    color: var(--ns-text, #374151);
-}
-.netstat-summary-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-.netstat-summary-dot.rx { background: #16a34a; }
-.netstat-summary-dot.tx { background: #d97706; }
-.netstat-summary-label  { color: var(--ns-muted, #6b7280); font-weight: 400; margin-right: 2px; }
-
-/* Chart wrap ── */
-.netstat-chart-wrap {
-    border: 1px solid var(--ns-border, #dfe4ea);
-    border-radius: 8px;
-    padding: 14px;
-    background: var(--ns-bg, #fff);
-}
-.netstat-chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-.netstat-chart-title {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--ns-text, #1f2937);
-}
-.netstat-chart-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--ns-badge-bg, #e0f2fe);
-    color: var(--ns-badge-text, #0369a1);
-}
-.netstat-chart-canvas { width: 100%; display: block; }
-
-/* Loading/empty states ── */
-.netstat-empty {
-    padding: 32px;
-    text-align: center;
-    color: var(--ns-muted, #6b7280);
-    font-size: 14px;
-}
-.netstat-empty-icon { font-size: 36px; display: block; margin-bottom: 8px; }
-
-@media (max-width: 640px) {
-    .netstat-dashboard  { padding: 12px; }
-    .netstat-summary    { gap: 8px; }
-    .netstat-chart-wrap { padding: 10px; }
-}
-</style>
+<link rel="stylesheet" href="/luci-static/resources/netstat/netstat-usage.css" />
 
 <div class="netstat-dashboard">
     <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">
@@ -206,25 +120,23 @@ end
 
 <% if cur_iface ~= "" and #stats > 0 then %>
 
-    <%-- Summary bar --%>
     <div class="netstat-summary">
         <div class="netstat-summary-item">
             <span class="netstat-summary-dot rx"></span>
-            <span class="netstat-summary-label"><%:Download%></span>
+            <span class="netstat-summary-label"><%:Download%>:</span>
             <strong><%=fmt_bytes(total_rx)%></strong>
         </div>
         <div class="netstat-summary-item">
             <span class="netstat-summary-dot tx"></span>
-            <span class="netstat-summary-label"><%:Upload%></span>
+            <span class="netstat-summary-label"><%:Upload%>:</span>
             <strong><%=fmt_bytes(total_tx)%></strong>
         </div>
-        <div class="netstat-summary-item" style="margin-left:auto;">
-            <span class="netstat-summary-label"><%:Total%></span>
+        <div class="netstat-summary-item netstat-summary-total">
+            <span class="netstat-summary-label"><%:Total%>:</span>
             <strong><%=fmt_bytes(total_rx + total_tx)%></strong>
         </div>
     </div>
 
-    <%-- Chart --%>
     <div class="netstat-chart-wrap">
         <div class="netstat-chart-header">
             <h3 class="netstat-chart-title"><%=title%> <%:Usage%></h3>
@@ -237,52 +149,51 @@ end
     <script src="/luci-static/resources/netstat/chartjs-plugin-datalabels"></script>
     <script>
     (function () {
-        // ── Theme detection ────────────────────────────────────────────────────
         function getTextColor() {
-            const bg  = window.getComputedStyle(document.body).backgroundColor;
+            var bg  = window.getComputedStyle(document.body).backgroundColor;
             if (!bg) return '#1f2937';
-            const rgb = bg.match(/\d+/g);
+            var rgb = bg.match(/\d+/g);
             if (!rgb || rgb.length < 3) return '#1f2937';
-            const lum = (Number(rgb[0])*299 + Number(rgb[1])*587 + Number(rgb[2])*114) / 1000;
+            var lum = (Number(rgb[0])*299 + Number(rgb[1])*587 + Number(rgb[2])*114) / 1000;
             return lum < 128 ? '#f3f4f6' : '#1f2937';
         }
         function getGridColor() {
-            const t = getTextColor();
-            return t === '#1f2937' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.1)';
+            return getTextColor() === '#1f2937' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)';
         }
 
-        const textColor  = getTextColor();
-        const gridColor  = getGridColor();
+        var textColor = getTextColor();
+        var gridColor = getGridColor();
 
-        // ── Data ──────────────────────────────────────────────────────────────
-        const labels = [
-            <% for _, stat in ipairs(stats) do %>
-                "<%= view_mode == "daily" and stat.date or stat.month %>",
+        var labels = [
+            <% for i, stat in ipairs(stats) do
+                local lbl = view_mode == "daily" and stat.date or stat.month
+            %>"<%=lbl%>"<% if i < #stats then %>,<% end %>
             <% end %>
         ];
-        const rxData = [
-            <% for _, stat in ipairs(stats) do %><%= math.floor(stat.rx) %>,<% end %>
+        var rxData = [
+            <% for i, stat in ipairs(stats) do
+            %><%= math.floor(stat.rx) %><% if i < #stats then %>,<% end %>
+            <% end %>
         ];
-        const txData = [
-            <% for _, stat in ipairs(stats) do %><%= math.floor(stat.tx) %>,<% end %>
+        var txData = [
+            <% for i, stat in ipairs(stats) do
+            %><%= math.floor(stat.tx) %><% if i < #stats then %>,<% end %>
+            <% end %>
         ];
 
-        // ── Canvas sizing (min 48px per row, max 600px) ───────────────────────
-        const BAR_H = 48;
-        const canvas = document.getElementById('trafficChart');
+        var BAR_H  = 48;
+        var canvas = document.getElementById('trafficChart');
         canvas.height = Math.min(Math.max(labels.length * BAR_H, 280), 700);
 
-        const ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext('2d');
 
-        // ── Gradient for RX bars ──────────────────────────────────────────────
         function rxGradient() {
-            const g = ctx.createLinearGradient(0, 0, canvas.width || 600, 0);
-            g.addColorStop(0, '#86efac');  // green-300
-            g.addColorStop(1, '#15803d');  // green-700
+            var g = ctx.createLinearGradient(0, 0, canvas.width || 600, 0);
+            g.addColorStop(0, '#86efac');
+            g.addColorStop(1, '#15803d');
             return g;
         }
 
-        // ── Format helper (same as Lua side) ─────────────────────────────────
         function fmtBytes(v) {
             if (v >= 1099511627776) return (v/1099511627776).toFixed(2) + ' TB';
             if (v >= 1073741824)   return (v/1073741824).toFixed(2) + ' GB';
@@ -291,7 +202,8 @@ end
             return v + ' B';
         }
 
-        // ── Chart.js config ───────────────────────────────────────────────────
+        var maxVal = Math.max.apply(null, rxData.concat(txData).concat([1]));
+
         new Chart(ctx, {
             type: 'bar',
             data: {
@@ -300,7 +212,7 @@ end
                     {
                         label: '<%:Download (RX)%>',
                         data: rxData,
-                        backgroundColor: rxData.map(() => rxGradient()),
+                        backgroundColor: rxData.map(function() { return rxGradient(); }),
                         borderRadius: 4,
                         borderSkipped: false,
                         datalabels: {
@@ -309,11 +221,8 @@ end
                             align: 'center',
                             font: { size: 11, weight: '600' },
                             formatter: fmtBytes,
-                            // Hide label when bar is too narrow to fit text
-                            display: ctx => {
-                                const v = ctx.dataset.data[ctx.dataIndex];
-                                const max = Math.max(...rxData, ...txData);
-                                return max > 0 && v / max > 0.08;
+                            display: function(ctx) {
+                                return maxVal > 0 && ctx.dataset.data[ctx.dataIndex] / maxVal > 0.08;
                             }
                         }
                     },
@@ -329,10 +238,8 @@ end
                             align: 'right',
                             font: { size: 11, weight: '600' },
                             formatter: fmtBytes,
-                            display: ctx => {
-                                const v = ctx.dataset.data[ctx.dataIndex];
-                                const max = Math.max(...rxData, ...txData);
-                                return max > 0 && v / max > 0.02;
+                            display: function(ctx) {
+                                return maxVal > 0 && ctx.dataset.data[ctx.dataIndex] / maxVal > 0.02;
                             }
                         }
                     }
@@ -340,7 +247,7 @@ end
             },
             options: {
                 indexAxis: 'y',
-                responsive: false,      // we set height manually above
+                responsive: false,
                 maintainAspectRatio: false,
                 animation: { duration: 400 },
                 plugins: {
@@ -355,14 +262,13 @@ end
                     },
                     tooltip: {
                         callbacks: {
-                            label: ctx => ' ' + fmtBytes(ctx.raw)
+                            label: function(ctx) { return ' ' + fmtBytes(ctx.raw); }
                         }
                     }
                 },
                 scales: {
                     x: {
                         grid:  { color: gridColor },
-                        border:{ dash: [4,4] },
                         ticks: {
                             color: textColor,
                             callback: fmtBytes,
@@ -382,14 +288,14 @@ end
 
 <% elseif #ifaces == 0 then %>
     <div class="netstat-empty">
-        <span class="netstat-empty-icon">📡</span>
+        <span class="netstat-empty-icon">&#128225;</span>
         <%:No vnStat interfaces were found. Make sure vnStat has been initialized.%>
     </div>
 <% else %>
     <div class="netstat-empty">
-        <span class="netstat-empty-icon">📊</span>
-        <%:No data available for %> <strong><%=cur_iface%></strong>
-        <div style="margin-top:6px;font-size:12px;">
+        <span class="netstat-empty-icon">&#128202;</span>
+        <%:No data available for%> <strong><%=cur_iface%></strong>
+        <div class="netstat-hint">
             <%:vnStat may still be collecting its first data. Try again in a few minutes.%>
         </div>
     </div>
