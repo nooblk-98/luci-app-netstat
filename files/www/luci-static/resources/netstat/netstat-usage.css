@@ -51,6 +51,7 @@
     border-radius: 8px;
     padding: 14px;
     background: #fff;
+    overflow: hidden;
 }
 
 .netstat-chart-header {

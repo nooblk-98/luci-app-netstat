@@ -150,12 +150,28 @@ end
     <script>
     (function () {
         function getTextColor() {
-            var bg  = window.getComputedStyle(document.body).backgroundColor;
-            if (!bg) return '#1f2937';
-            var rgb = bg.match(/\d+/g);
-            if (!rgb || rgb.length < 3) return '#1f2937';
-            var lum = (Number(rgb[0])*299 + Number(rgb[1])*587 + Number(rgb[2])*114) / 1000;
-            return lum < 128 ? '#f3f4f6' : '#1f2937';
+            function lumFromBg(bg) {
+                var rgb = bg ? bg.match(/\d+/g) : null;
+                if (!rgb || rgb.length < 3) return null;
+                var alpha = rgb.length >= 4 ? parseFloat(rgb[3]) : 1;
+                if (alpha < 0.05) return null; // transparent
+                return (Number(rgb[0])*299 + Number(rgb[1])*587 + Number(rgb[2])*114) / 1000;
+            }
+            // Walk up from dashboard's parent to find the first opaque background
+            var dash = document.querySelector('.netstat-dashboard');
+            var el = dash ? dash.parentElement : null;
+            while (el && el !== document.documentElement) {
+                var lum = lumFromBg(window.getComputedStyle(el).backgroundColor);
+                if (lum !== null) return lum < 128 ? '#f3f4f6' : '#1f2937';
+                el = el.parentElement;
+            }
+            // Fallback: html then body
+            var fallbacks = [document.documentElement, document.body];
+            for (var i = 0; i < fallbacks.length; i++) {
+                var lum = lumFromBg(window.getComputedStyle(fallbacks[i]).backgroundColor);
+                if (lum !== null) return lum < 128 ? '#f3f4f6' : '#1f2937';
+            }
+            return '#1f2937';
         }
         function getGridColor() {
             return getTextColor() === '#1f2937' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.10)';
@@ -163,6 +179,24 @@ end
 
         var textColor = getTextColor();
         var gridColor = getGridColor();
+
+        if (textColor === '#f3f4f6') {
+            var _dark = [
+                ['.netstat-dashboard',   { background: '#1a1d20', borderColor: '#374151' }],
+                ['.netstat-summary',     { background: '#111315', borderColor: '#374151', color: '#f3f4f6' }],
+                ['.netstat-chart-wrap',  { background: '#1a1d20', borderColor: '#374151' }],
+                ['.netstat-chart-header',{ background: '#1a1d20' }],
+                ['.netstat-chart-title', { color: '#f3f4f6' }],
+                ['.netstat-chart-badge', { background: '#1e3a5f', color: '#93c5fd' }],
+                ['.netstat-summary-label',{ color: '#9ca3af' }],
+                ['.netstat-empty',       { color: '#9ca3af' }],
+                ['.netstat-hint',        { color: '#6b7280' }]
+            ];
+            _dark.forEach(function(pair) {
+                var el = document.querySelector(pair[0]);
+                if (el) Object.assign(el.style, pair[1]);
+            });
+        }
 
         var labels = [
             <% for i, stat in ipairs(stats) do
@@ -184,6 +218,7 @@ end
         var BAR_H  = 48;
         var canvas = document.getElementById('trafficChart');
         canvas.height = Math.min(Math.max(labels.length * BAR_H, 280), 700);
+        canvas.width  = canvas.offsetWidth || canvas.parentElement.clientWidth;
 
         var ctx = canvas.getContext('2d');
 
