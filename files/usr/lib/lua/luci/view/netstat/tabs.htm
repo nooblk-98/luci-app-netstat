@@ -12,6 +12,7 @@ local tabs_def = {
     { id="settings", label=translate("Settings")      },
     { id="about",    label=translate("About")         },
 }
+
 %>
 
 <style>
@@ -48,7 +49,6 @@ local tabs_def = {
     font-weight: 600;
 }
 
-/* Small dot indicator for active tab */
 .netstat-tab-dot {
     width: 6px;
     height: 6px;
@@ -68,7 +68,6 @@ local tabs_def = {
 }
 
 <% if active_tab == "settings" then %>
-/* Tighten up CBI section for settings tab */
 .cbi-map > .cbi-section:last-of-type {
     border: 1px solid #dfe3eb;
     border-radius: 10px;
@@ -76,7 +75,39 @@ local tabs_def = {
     padding: 16px 18px;
 }
 <% end %>
+
 </style>
+
+<style id="netstat-dark-style"></style>
+<script>
+(function () {
+    var isDark = localStorage.getItem('luci-theme') === 'dark'
+             || document.body.classList.contains('dark-theme');
+    window._netstatDark = isDark;
+    if (!isDark) return;
+    document.getElementById('netstat-dark-style').textContent = [
+        '.netstat-tabmenu li a{background:#2a2d32!important;border-color:#4b5563!important;color:#d1d5db!important}',
+        '.netstat-tabmenu li.active a{background:#1a1d20!important;border-color:#4b5563!important;border-bottom-color:#1a1d20!important;color:#60a5fa!important}',
+        '.netstat-tab-divider{border-top-color:#4b5563!important}',
+        '.netstat-dashboard{background:#1a1d20!important;border-color:#374151!important;color:#f3f4f6!important}',
+        '.netstat-summary{background:#111315!important;border-color:#374151!important;color:#f3f4f6!important}',
+        '.netstat-chart-wrap{background:#1a1d20!important;border-color:#374151!important}',
+        '.netstat-chart-header{background:#1a1d20!important}',
+        '.netstat-chart-title{color:#f3f4f6!important}',
+        '.netstat-chart-badge{background:#1e3a5f!important;color:#93c5fd!important}',
+        '.netstat-summary-label{color:#9ca3af!important}',
+        '.netstat-summary-item{color:#f3f4f6!important}',
+        '.netstat-empty{color:#9ca3af!important}',
+        '.netstat-hint{color:#6b7280!important}',
+        '.netstat-about-card{background:#1a1d20!important;border-color:#374151!important;color:#f3f4f6!important}',
+        '.netstat-about-card h3{color:#f3f4f6!important}',
+        '.netstat-about-card hr{border-top-color:#374151!important}',
+        '.netstat-about-label{color:#9ca3af!important}',
+        '.netstat-about-row a{color:#60a5fa!important}',
+        '.cbi-map>.cbi-section:last-of-type{background:#1a1d20!important;border-color:#374151!important}'
+    ].join('');
+})();
+</script>
 
 <div class="netstat-tab-wrap">
     <ul class="netstat-tabmenu">

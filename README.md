@@ -104,6 +104,33 @@ service vnstat enable
 - **Daily Statistics** - Traffic breakdown by day
 - **Monthly Analysis** - Monthly usage overview
 
+## Dark / Light Theme Switching
+
+The NoobWRT theme stores the user's theme preference in **`localStorage`** under the key `luci-theme` (`'dark'` or `'light'`). When dark mode is active the theme also adds the class `dark-theme` to `document.body`.
+
+`tabs.htm` (rendered on every Netstat tab) reads this value at page load:
+
+```js
+var isDark = localStorage.getItem('luci-theme') === 'dark'
+          || document.body.classList.contains('dark-theme');
+```
+
+If dark mode is detected, a `<style>` block is injected into the page with `!important` overrides for every `.netstat-*` class. This covers:
+
+| Selector | Dark value |
+|---|---|
+| `.netstat-dashboard` | `#1a1d20` background |
+| `.netstat-summary` | `#111315` background |
+| `.netstat-chart-wrap` | `#1a1d20` background |
+| `.netstat-about-card` | `#1a1d20` background |
+| `.netstat-chart-title`, `.netstat-summary-item` | `#f3f4f6` text |
+| `.netstat-summary-label`, `.netstat-about-label` | `#9ca3af` text |
+| `.netstat-about-row a` | `#60a5fa` link color |
+
+The same flag (`window._netstatDark`) is passed to Chart.js so axis labels and grid lines also use dark-friendly colors.
+
+No server-side detection or separate CSS files are needed — everything is driven by the single `localStorage` value the theme toggle button already sets.
+
 ## Credits
 
 - **Original Development**: [SMALLPROGRAM](https://github.com/smallprogram)
