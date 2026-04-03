@@ -1,3 +1,27 @@
+/* ── netstat.css  (light theme) ── */
+
+/* CSS custom properties – override all the scattered !important chains */
+:root {
+  --ns-bg:           #ffffff;
+  --ns-border:       #dfe3eb;
+  --ns-text:         #111111;
+  --ns-muted:        #4b5563;
+  --ns-number:       #111111;
+  --ns-unit:         #2a2a2a;
+  --ns-label:        #3a3a3a;
+  --ns-box-shadow:   rgba(0,0,0,0.05);
+  --ns-dl-color:     #1f7a3a;
+  --ns-ul-color:     #1c63b8;
+  --ns-total-color:  #222222;
+  --ns-status-up:    #1e6b2f;
+  --ns-status-down:  #b32020;
+  --ns-sep:          #111111;
+  --ns-summary-bg:   #f7f9fc;
+  --ns-badge-bg:     #e0f2fe;
+  --ns-badge-text:   #0369a1;
+}
+
+/* ── Widget wrapper ─────────────────────────────────────────────────────────── */
 .stats-grid.netstat-wrap {
   padding: 10px 0 !important;
   border-radius: 0 !important;
@@ -14,60 +38,73 @@
 .netstat-row {
   display: flex !important;
   gap: 12px !important;
-  align-items: center !important;
+  align-items: stretch !important;   /* equal-height cards */
   justify-content: center !important;
   flex-wrap: wrap !important;
   max-width: 1180px !important;
   margin: 0 auto !important;
-  padding: 0 38px !important;
+  padding: 0 16px !important;
 }
 
+/* ── Stat boxes ──────────────────────────────────────────────────────────────── */
 .netstat-box {
-  flex: 0 1 180px !important;
+  flex: 0 1 175px !important;
   min-width: 110px !important;
   max-width: 185px !important;
-  padding: 11px 10px !important;
-  background: #fff !important;
-  border: 2px solid #111 !important;
+  padding: 12px 10px !important;
+  background: var(--ns-bg) !important;
+  border: 2px solid var(--ns-border) !important;
   border-radius: 12px !important;
   text-align: center !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: 0 2px 6px var(--ns-box-shadow) !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.netstat-box:hover {
+  border-color: #94a3b8 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
 }
 
 .netstat-center {
-  flex: 0 1 205px !important;
+  flex: 0 1 210px !important;
   min-width: 180px !important;
   border-style: dashed !important;
-  border-radius: 12px !important;
+  border-width: 2px !important;
 }
 
+/* ── Typography ─────────────────────────────────────────────────────────────── */
 .netstat-number {
   font-weight: 800 !important;
   font-size: 24px !important;
-  color: #111 !important;
+  color: var(--ns-number) !important;
   line-height: 1 !important;
 }
 
 .netstat-unit {
   font-weight: 700 !important;
   font-size: 12px !important;
-  color: #2a2a2a !important;
+  color: var(--ns-unit) !important;
   letter-spacing: 0.2px !important;
   margin-top: 4px !important;
 }
 
 .netstat-label {
-  margin-top: 5px !important;
-  font-size: 12px !important;
+  margin-top: 6px !important;
+  font-size: 11px !important;
   font-weight: 700 !important;
-  color: #3a3a3a !important;
-  text-transform: lowercase !important;
+  color: var(--ns-label) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
 }
 
+/* ── Center (status) card ─────────────────────────────────────────────────── */
 .netstat-center-title {
-  font-size: 12px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  color: #222 !important;
+  color: var(--ns-muted) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.8px !important;
 }
@@ -75,56 +112,41 @@
 .netstat-center-status {
   font-size: 15px !important;
   font-weight: 800 !important;
-  color: #1e6b2f !important;
-  margin-top: 6px !important;
+  color: var(--ns-status-up) !important;
+  margin-top: 4px !important;
 }
 
 .netstat-center-sep {
   height: 1px !important;
-  background: #111 !important;
-  opacity: 0.4 !important;
-  margin: 6px 0 !important;
+  background: var(--ns-sep) !important;
+  opacity: 0.15 !important;
+  margin: 8px 0 !important;
 }
 
 .netstat-center-ip {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  color: #111 !important;
+  color: var(--ns-text) !important;
   font-family: "Lucida Console", "Courier New", monospace !important;
   word-break: break-all !important;
+  margin-top: 4px !important;
 }
 
-.netstat-box.is-download .netstat-number {
-  color: #1f7a3a !important;
-}
+/* ── Accent colours ─────────────────────────────────────────────────────────── */
+.netstat-box.is-download .netstat-number { color: var(--ns-dl-color)    !important; }
+.netstat-box.is-upload   .netstat-number { color: var(--ns-ul-color)    !important; }
+.netstat-box.is-total    .netstat-number { color: var(--ns-total-color) !important; }
+.netstat-box.is-down .netstat-center-status { color: var(--ns-status-down) !important; }
 
-.netstat-box.is-upload .netstat-number {
-  color: #1c63b8 !important;
-}
-
-.netstat-box.is-total .netstat-number {
-  color: #222 !important;
-}
-
-.netstat-box.is-down .netstat-center-status {
-  color: #b32020 !important;
-}
-
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .netstat-row {
-    padding: 0 12px !important;
-  }
-
+  .netstat-row { padding: 0 12px !important; }
   .netstat-box,
-  .netstat-center {
-    max-width: none !important;
-    flex: 1 1 45% !important;
-  }
+  .netstat-center { max-width: none !important; flex: 1 1 45% !important; }
 }
 
 @media (max-width: 600px) {
   .netstat-box,
-  .netstat-center {
-    flex: 1 1 100% !important;
-  }
+  .netstat-center { flex: 1 1 100% !important; }
+  .netstat-number { font-size: 20px !important; }
 }
