@@ -19,6 +19,9 @@
   --ns-summary-bg:   #f7f9fc;
   --ns-badge-bg:     #e0f2fe;
   --ns-badge-text:   #0369a1;
+  --ns-cpu-color:    #d97706;
+  --ns-mem-color:    #7c3aed;
+  --ns-bar-bg:       #e5e7eb;
 }
 
 /* ── Widget wrapper ─────────────────────────────────────────────────────────── */
@@ -70,7 +73,7 @@
 
 .netstat-center {
   flex: 0 1 210px !important;
-  min-width: 180px !important;
+  min-width: 0 !important;
   border-style: dashed !important;
   border-width: 2px !important;
 }
@@ -132,21 +135,208 @@
   margin-top: 4px !important;
 }
 
+.ns-uptime-row {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  margin-top: 2px !important;
+}
+
+.ns-uptime-text {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: var(--ns-muted) !important;
+  font-family: "Lucida Console", "Courier New", monospace !important;
+}
+
 /* ── Accent colours ─────────────────────────────────────────────────────────── */
 .netstat-box.is-download .netstat-number { color: var(--ns-dl-color)    !important; }
 .netstat-box.is-upload   .netstat-number { color: var(--ns-ul-color)    !important; }
 .netstat-box.is-total    .netstat-number { color: var(--ns-total-color) !important; }
 .netstat-box.is-down .netstat-center-status { color: var(--ns-status-down) !important; }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .netstat-row { padding: 0 12px !important; }
-  .netstat-box,
-  .netstat-center { max-width: none !important; flex: 1 1 45% !important; }
+/* ── Rate box layout ────────────────────────────────────────────────────────── */
+.ns-spark {
+  width: 90px !important;
+  height: 28px !important;
+  margin: 0 auto 4px !important;
+  display: block !important;
 }
 
-@media (max-width: 600px) {
+.ns-rate-row {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: center !important;
+  gap: 4px !important;
+}
+
+.ns-peak {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--ns-muted) !important;
+  margin-top: 2px !important;
+  letter-spacing: 0.2px !important;
+}
+
+/* ── Trend arrows ───────────────────────────────────────────────────────────── */
+.ns-trend {
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  margin-left: 2px !important;
+}
+
+.ns-trend-up   { color: #1f7a3a !important; }
+.ns-trend-down { color: #b32020 !important; }
+.ns-trend-flat { color: #9ca3af !important; font-size: 8px !important; }
+
+/* ── Info card (uptime + connections) ───────────────────────────────────────── */
+.netstat-info-card {
+  flex: 0 1 175px !important;
+  min-width: 0 !important;
+  max-width: 185px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 10px !important;
+}
+
+.ns-info-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 4px 0 !important;
+}
+
+.ns-info-icon {
+  font-size: 18px !important;
+  line-height: 1 !important;
+  width: 24px !important;
+  text-align: center !important;
+}
+
+.ns-info-block {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.ns-info-value {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: var(--ns-number) !important;
+  line-height: 1 !important;
+  font-family: "Lucida Console", "Courier New", monospace !important;
+}
+
+.ns-info-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: var(--ns-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 2px !important;
+}
+
+.ns-info-block-grow {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.ns-info-top-row {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+}
+
+.ns-info-sublabel {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: var(--ns-muted) !important;
+  white-space: nowrap !important;
+}
+
+/* ── Progress bars ──────────────────────────────────────────────────────────── */
+.ns-bar-wrap {
+  height: 5px !important;
+  background: var(--ns-bar-bg) !important;
+  border-radius: 3px !important;
+  margin-top: 4px !important;
+  overflow: hidden !important;
+}
+
+.ns-bar-fill {
+  height: 100% !important;
+  border-radius: 3px !important;
+  transition: width 0.5s ease !important;
+  min-width: 0 !important;
+}
+
+#ns-cpu-bar { background: var(--ns-cpu-color) !important; }
+#ns-mem-bar { background: var(--ns-mem-color) !important; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+/* Tablet: 2 columns, 3 rows */
+@media (max-width: 900px) {
+  .netstat-row {
+    padding: 0 10px !important;
+    gap: 10px !important;
+  }
+
   .netstat-box,
-  .netstat-center { flex: 1 1 100% !important; }
+  .netstat-center,
+  .netstat-info-card {
+    flex: 1 1 calc(50% - 10px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Mobile: 2 compact columns */
+@media (max-width: 600px) {
+  .netstat-row {
+    padding: 0 8px !important;
+    gap: 8px !important;
+  }
+
+  .netstat-box,
+  .netstat-center,
+  .netstat-info-card {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    padding: 10px 8px !important;
+    box-sizing: border-box !important;
+  }
+
   .netstat-number { font-size: 20px !important; }
+  .netstat-unit   { font-size: 11px !important; }
+
+  /* Sparkline shrinks to fit narrower card */
+  .ns-spark {
+    width: 100% !important;
+    max-width: 80px !important;
+  }
+
+  .netstat-info-card {
+    padding: 8px !important;
+  }
+}
+
+/* Very small phones: single column */
+@media (max-width: 360px) {
+  .netstat-box,
+  .netstat-center,
+  .netstat-info-card {
+    flex: 1 1 100% !important;
+  }
+
+  .netstat-info-card {
+    flex-direction: column !important;
+  }
 }

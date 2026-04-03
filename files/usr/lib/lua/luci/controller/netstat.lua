@@ -97,6 +97,68 @@ function getNetdevStats()
         end
     end
 
+    -- ── System uptime ─────────────────────────────────────────────────────────
+    local uptime_sec = 0
+    local uf = io.open("/proc/uptime", "r")
+    if uf then
+        local line = uf:read("*l")
+        uf:close()
+        if line then
+            uptime_sec = math.floor(tonumber(line:match("^([%d%.]+)")) or 0)
+        end
+    end
+
+    -- ── CPU usage (two reads 200 ms apart for accurate delta) ────────────────
+    local cpu_pct = 0
+    local function read_cpu_stat()
+        local f = io.open("/proc/stat", "r")
+        if not f then return nil end
+        local line = f:read("*l"); f:close()
+        local vals = {}
+        for n in line:gmatch("%d+") do vals[#vals+1] = tonumber(n) end
+        if #vals < 4 then return nil end
+        local idle, total = vals[4], 0
+        for _, v in ipairs(vals) do total = total + v end
+        return { idle = idle, total = total }
+    end
+    local s1 = read_cpu_stat()
+    if s1 then
+        os.execute("sleep 0.2")
+        local s2 = read_cpu_stat()
+        if s2 then
+            local d_total = s2.total - s1.total
+            local d_idle  = s2.idle  - s1.idle
+            if d_total > 0 then
+                cpu_pct = math.floor((d_total - d_idle) / d_total * 100 + 0.5)
+            end
+        end
+    end
+
+    -- ── Memory usage ──────────────────────────────────────────────────────────
+    local mem_total, mem_available = 0, 0
+    local mf = io.open("/proc/meminfo", "r")
+    if mf then
+        for line in mf:lines() do
+            local k, v = line:match("^(%S+):%s+(%d+)")
+            if k == "MemTotal"     then mem_total     = tonumber(v) or 0 end
+            if k == "MemAvailable" then mem_available = tonumber(v) or 0 end
+            if mem_total > 0 and mem_available > 0 then break end
+        end
+        mf:close()
+    end
+    local mem_pct = 0
+    if mem_total > 0 then
+        mem_pct = math.floor((mem_total - mem_available) / mem_total * 100 + 0.5)
+    end
+    -- used MB and total MB for display
+    local mem_used_mb  = math.floor((mem_total - mem_available) / 1024 + 0.5)
+    local mem_total_mb = math.floor(mem_total / 1024 + 0.5)
+
     luci.http.prepare_content("application/json")
-    luci.http.write_json({ stats = stats, ip = ip, status = status })
+    luci.http.write_json({ stats = stats, ip = ip, status = status,
+                           uptime   = uptime_sec,
+                           cpu_pct  = cpu_pct,
+                           mem_pct  = mem_pct,
+                           mem_used = mem_used_mb,
+                           mem_total = mem_total_mb })
 end
