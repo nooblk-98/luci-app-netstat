@@ -22,7 +22,7 @@
 
 <div align="center">
 
-![Mobile Preview](images/mobile-preview.png)
+![Mobile Preview](images/mobile.png)
 
 </div>
 
