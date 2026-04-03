@@ -19,6 +19,8 @@
 
 ![Network Preview](images/network.png)
 
+![Mobile Preview](images/mobile.png)
+
 
 **luci-app-netstat** is a modern, feature-rich LuCI application that provides comprehensive network traffic statistics and monitoring for OpenWrt routers. It leverages `vnstat` for accurate traffic monitoring and presents the data through an intuitive web interface.
 
