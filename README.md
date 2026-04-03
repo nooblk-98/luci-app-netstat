@@ -15,16 +15,7 @@
 ---
 
 ## Overview
-![Dashboard Preview](images/dash.png)
-
-![Network Preview](images/network.png)
-
-
-<div align="center">
-
-![Mobile Preview](images/mobile.png)
-
-</div>
+![Dashboard Preview](images/luci-app-netstat.png)
 
 
 
