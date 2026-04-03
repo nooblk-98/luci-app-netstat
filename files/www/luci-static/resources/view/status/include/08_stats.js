@@ -545,21 +545,17 @@ return baseclass.extend({
 		const ulTrend = E('span', { class: 'ns-trend ' + tTx.cls }, tTx.char);
 		ulBox.querySelector('.ns-rate-row').appendChild(ulTrend);
 
-		// Layout order:
-		// Row 1: download | upload
-		// Row 2: downloaded | uploaded
-		// Row 3: status card (full width)
-		// Row 4: ram+storage | cpu temp
+		// Desktop order: DOWNLOAD | UPLOAD | TEMP | INTERNET STATUS | DISK+RAM | DOWNLOADED | UPLOADED
 		const row = E('div', { class: 'netstat-row' }, [
 			dlBox,
 			ulBox,
-			createStatBox(_('downloaded'), totalRx[0], totalRx[1], 'is-total is-downloaded'),
-			createStatBox(_('uploaded'),   totalTx[0], totalTx[1], 'is-total is-uploaded'),
+			createTempCard(data.cpu_temp != null ? data.cpu_temp : null,
+				formatUptime(data.uptime || 0)),
 			createStatusCard(data.status || 'Disconnected', data.ip),
 			createInfoCard(data.mem_pct || 0, data.mem_used || 0, data.mem_total || 0,
 				data.disk_pct || 0, data.disk_used || 0, data.disk_total || 0),
-			createTempCard(data.cpu_temp != null ? data.cpu_temp : null,
-				formatUptime(data.uptime || 0)),
+			createStatBox(_('downloaded'), totalRx[0], totalRx[1], 'is-total is-downloaded'),
+			createStatBox(_('uploaded'),   totalTx[0], totalTx[1], 'is-total is-uploaded'),
 		]);
 
 		const container = E('div', { class: 'stats-grid netstat-wrap' }, row);

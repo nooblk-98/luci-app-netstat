@@ -42,20 +42,20 @@
 
 .netstat-row {
   display: flex !important;
-  gap: 12px !important;
-  align-items: stretch !important;   /* equal-height cards */
+  gap: 10px !important;
+  align-items: stretch !important;
   justify-content: center !important;
-  flex-wrap: wrap !important;
-  max-width: 1180px !important;
+  flex-wrap: nowrap !important;        /* single row on desktop */
+  max-width: 1280px !important;
   margin: 0 auto !important;
   padding: 0 16px !important;
 }
 
 /* ── Stat boxes ──────────────────────────────────────────────────────────────── */
 .netstat-box {
-  flex: 0 1 175px !important;
-  min-width: 110px !important;
-  max-width: 185px !important;
+  flex: 1 1 0 !important;             /* all boxes share space equally */
+  min-width: 0 !important;
+  max-width: none !important;
   padding: 12px 10px !important;
   background: var(--ns-bg) !important;
   border: 2px solid var(--ns-border) !important;
@@ -66,6 +66,7 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
+  box-sizing: border-box !important;
 }
 
 .netstat-box:hover {
@@ -74,10 +75,15 @@
 }
 
 .netstat-center {
-  flex: 0 1 210px !important;
+  flex: 1.2 1 0 !important;           /* status card slightly wider */
   min-width: 0 !important;
   border-style: dashed !important;
   border-width: 2px !important;
+}
+
+.netstat-info-card {
+  flex: 1.2 1 0 !important;           /* info cards slightly wider for pill bars */
+  min-width: 0 !important;
 }
 
 /* ── Typography ─────────────────────────────────────────────────────────────── */
@@ -207,11 +213,8 @@
 .ns-trend-down { color: #b32020 !important; }
 .ns-trend-flat { color: #9ca3af !important; font-size: 8px !important; }
 
-/* ── Info card (uptime + connections) ───────────────────────────────────────── */
+/* ── Info card ───────────────────────────────────────────────────────────────── */
 .netstat-info-card {
-  flex: 0 1 175px !important;
-  min-width: 0 !important;
-  max-width: 185px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
@@ -347,9 +350,10 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 
-/* Tablet: 2 columns */
+/* Tablet: wrap into 2 columns */
 @media (max-width: 900px) {
   .netstat-row {
+    flex-wrap: wrap !important;
     padding: 0 10px !important;
     gap: 10px !important;
   }
@@ -363,7 +367,7 @@
     box-sizing: border-box !important;
   }
 
-  /* Status card spans full width on tablet */
+  /* Status card full width, placed after rate+total boxes */
   .netstat-center {
     flex: 1 1 100% !important;
     order: 5 !important;
@@ -373,6 +377,7 @@
 /* Mobile: 2 compact columns, explicit order matching screenshot */
 @media (max-width: 600px) {
   .netstat-row {
+    flex-wrap: wrap !important;
     padding: 0 8px !important;
     gap: 8px !important;
   }
@@ -387,18 +392,17 @@
     box-sizing: border-box !important;
   }
 
-  /* Order: download(1) upload(2) | downloaded(3) uploaded(4) | status(5 full) | mem+temp(6) disk(7) */
+  /* Mobile order: download | upload → status(full) → info | temp → downloaded | uploaded */
   .netstat-box.is-download   { order: 1 !important; }
   .netstat-box.is-upload     { order: 2 !important; }
-  .netstat-box.is-downloaded { order: 3 !important; }
-  .netstat-box.is-uploaded   { order: 4 !important; }
-  .netstat-center            { order: 5 !important; flex: 1 1 100% !important; }
-  .netstat-info-card         { order: 6 !important; }
+  .netstat-center            { order: 3 !important; flex: 1 1 100% !important; }
+  .netstat-info-card         { order: 4 !important; }
+  .netstat-box.is-downloaded { order: 5 !important; }
+  .netstat-box.is-uploaded   { order: 6 !important; }
 
   .netstat-number { font-size: 20px !important; }
   .netstat-unit   { font-size: 11px !important; }
 
-  /* Sparkline shrinks to fit narrower card */
   .ns-spark {
     width: 100% !important;
     max-width: 80px !important;
