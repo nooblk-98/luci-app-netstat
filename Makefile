@@ -1,8 +1,8 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-netstat
-PKG_VERSION:=1.1.0
-PKG_RELEASE:=17
+PKG_VERSION:=1.1.1
+PKG_RELEASE:=18
 
 PKG_MAINTAINER:=NoobLK <liyanagelsofficial@gmail.com>
 PKG_LICENSE:=GPL-3.0
@@ -15,6 +15,9 @@ include $(TOPDIR)/feeds/luci/luci.mk
 
 define Package/luci-app-netstat/install
 	$(CP) ./files/* $(1)/
+	# vnstat package owns /etc/config/vnstat on newer OpenWrt versions.
+	# Remove it here to avoid file ownership conflicts if present in any tree.
+	$(RM) $(1)/etc/config/vnstat
 endef
 
 $(eval $(call BuildPackage,luci-app-netstat))
