@@ -1,0 +1,29 @@
+name: Build OpenWrt Package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: IPK
+            sdk_version: 24.10.5
+          - label: APK
+            sdk_version: 25.12.1
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build package
+        uses: nooblk-98/openwrt-package-compile-action@v1
+        with:
+          package-name: luci-app-3ginfo-lite
+          package-dir: luci-app-3ginfo-lite
+          sdk-version: ${{ matrix.sdk_version }}
+          sdk-target: x86
+          sdk-subtarget: "64"
+          artifact-name: luci-app-3ginfo-lite-${{ matrix.sdk_version }}
