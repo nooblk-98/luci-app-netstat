@@ -2,10 +2,39 @@ name: Build OpenWrt Package
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "Makefile"
+      - "files/**"
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  meta:
+    name: Read Package Metadata
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.meta.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read package version
+        id: meta
+        run: |
+          PKG_VERSION=$(sed -n 's/^PKG_VERSION:=//p' Makefile | head -n1)
+          PKG_RELEASE=$(sed -n 's/^PKG_RELEASE:=//p' Makefile | head -n1)
+          if [ -z "$PKG_VERSION" ] || [ -z "$PKG_RELEASE" ]; then
+            echo "Could not read PKG_VERSION or PKG_RELEASE from Makefile"
+            exit 1
+          fi
+          echo "release_tag=v${PKG_VERSION}-${PKG_RELEASE}" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    needs: meta
     strategy:
       fail-fast: false
       matrix:
@@ -26,3 +55,30 @@ jobs:
           sdk-target: x86
           sdk-subtarget: "64"
           artifact-name: luci-app-netstat-${{ matrix.sdk_version }}
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs:
+      - meta
+      - build
+    if: github.event_name == 'push'
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/release-files
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.meta.outputs.release_tag }}
+          name: luci-app-netstat ${{ needs.meta.outputs.release_tag }}
+          body: |
+            Automated package build for `luci-app-netstat`.
+
+            Source commit: `${{ github.sha }}`
+            Included outputs: `ipk` (24.10.5) and `apk` (25.12.1).
+          files: ${{ runner.temp }}/release-files/*
+          fail_on_unmatched_files: true
