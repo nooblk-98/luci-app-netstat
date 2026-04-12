@@ -1,4 +1,5 @@
 module("luci.controller.netstat", package.seeall)
+local nixio = require("nixio")
 
 function index()
     entry({"admin", "tools"}, firstchild(), _("Tools"), 50).dependent = false
@@ -123,7 +124,7 @@ function getNetdevStats()
     end
     local s1 = read_cpu_stat()
     if s1 then
-        os.execute("sleep 0.2")
+        nixio.nanosleep(0, 200000000)
         local s2 = read_cpu_stat()
         if s2 then
             local d_total = s2.total - s1.total
