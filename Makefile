@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=luci-app-netstat
-PKG_VERSION:=1.1.4
+PKG_VERSION:=1.1.5
 PKG_RELEASE:=19
 
 PKG_MAINTAINER:=NoobLK <liyanagelsofficial@gmail.com>

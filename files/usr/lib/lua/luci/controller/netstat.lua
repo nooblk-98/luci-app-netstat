@@ -70,16 +70,23 @@ function getNetdevStats()
 
     local ip = "N/A"
 
-    -- 1. Try public-IP APIs with a 2-second timeout (not 4)
-    local public_cmds = {
-        "curl -fsS --max-time 2 'https://api.ipify.org' 2>/dev/null",
-        "curl -fsS --max-time 2 'http://api.ipify.org' 2>/dev/null",
-        "uclient-fetch -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
-        "wget -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
-    }
-    for _, cmd in ipairs(public_cmds) do
-        local v = read_cmd(cmd)
-        if is_valid_ip(v) then ip = v; break end
+    -- Determine whether the caller wants a public IP (slow, requires network)
+    -- or just the fast local WAN address.  The JS frontend sends ?fast=1 for
+    -- poll ticks and omits it only when explicitly requesting a public IP refresh.
+    local want_public = luci.http.formvalue("fast") ~= "1"
+
+    -- 1. Try public-IP APIs (only when not in fast mode)
+    if want_public then
+        local public_cmds = {
+            "curl -fsS --max-time 2 'https://api.ipify.org' 2>/dev/null",
+            "curl -fsS --max-time 2 'http://api.ipify.org' 2>/dev/null",
+            "uclient-fetch -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
+            "wget -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
+        }
+        for _, cmd in ipairs(public_cmds) do
+            local v = read_cmd(cmd)
+            if is_valid_ip(v) then ip = v; break end
+        end
     end
 
     -- 2. Fall back to local WAN address (instant, no network needed)
@@ -171,13 +178,10 @@ function getNetdevStats()
 
     -- ── CPU temperature ───────────────────────────────────────────────────────
     local cpu_temp = nil
-    -- Try common thermal zone paths
-    local temp_paths = {
-        "/sys/class/thermal/thermal_zone0/temp",
-        "/sys/class/thermal/thermal_zone1/temp",
-        "/sys/devices/virtual/thermal/thermal_zone0/temp",
-    }
-    for _, path in ipairs(temp_paths) do
+    -- Scan all available thermal zones and pick the highest valid reading
+    -- (avoids hardcoded zone numbers which vary per device)
+    for zone = 0, 9 do
+        local path = "/sys/class/thermal/thermal_zone" .. zone .. "/temp"
         local tf = io.open(path, "r")
         if tf then
             local val = tf:read("*l")
@@ -186,9 +190,14 @@ function getNetdevStats()
             if t and t > 0 then
                 -- values > 1000 are in millidegrees
                 if t > 1000 then t = t / 1000 end
-                cpu_temp = math.floor(t + 0.5)
-                break
+                t = math.floor(t + 0.5)
+                -- Keep the highest temperature reading across all zones
+                if cpu_temp == nil or t > cpu_temp then
+                    cpu_temp = t
+                end
             end
+        else
+            break  -- zones are numbered consecutively; stop at first missing
         end
     end
 

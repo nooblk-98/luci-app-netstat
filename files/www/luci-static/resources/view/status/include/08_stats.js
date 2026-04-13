@@ -458,27 +458,50 @@ function updateContainer(container, data, dt) {
 	return true;
 }
 
+// ─── Cached public IP (refreshed every 60 s, not on every 2 s poll) ──────────
+let _cachedIp        = 'N/A';
+let _lastIpFetch     = 0;
+const IP_REFRESH_MS  = 60000;
+
+function maybeRefreshIp() {
+	const now = Date.now();
+	if (now - _lastIpFetch < IP_REFRESH_MS) return;
+	_lastIpFetch = now;
+	// Full fetch (no ?fast=1) to get public IP; update cache on success
+	fetchWithTimeout('/cgi-bin/luci/admin/tools/get_netdev_stats', 8000)
+		.then(r => { if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip; })
+		.catch(() => {});
+}
+
 // ─── Main baseclass ───────────────────────────────────────────────────────────
 return baseclass.extend({
 	title: _(''),
 
 	load() {
-		return fetchWithTimeout('/cgi-bin/luci/admin/tools/get_netdev_stats', 5000)
-			.then(r => ({
-				stats:      (r && r.stats)       || {},
-				ip:         (r && r.ip)          || 'N/A',
-				status:     (r && r.status)      || 'Disconnected',
-				uptime:     (r && r.uptime)      || 0,
-				cpu_pct:    (r && r.cpu_pct)     || 0,
-				cpu_temp:   (r && r.cpu_temp)    != null ? r.cpu_temp : null,
-				mem_pct:    (r && r.mem_pct)     || 0,
-				mem_used:   (r && r.mem_used)    || 0,
-				mem_total:  (r && r.mem_total)   || 0,
-				disk_pct:   (r && r.disk_pct)    || 0,
-				disk_used:  (r && r.disk_used)   || 0,
-				disk_total: (r && r.disk_total)  || 0,
-				preferred:  []
-			}))
+		// Use ?fast=1 to skip slow public-IP APIs — response is near-instant
+		return fetchWithTimeout('/cgi-bin/luci/admin/tools/get_netdev_stats?fast=1', 5000)
+			.then(r => {
+				// Seed the cached IP from the local WAN address on first load
+				if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
+				// Kick off a background public-IP refresh immediately
+				_lastIpFetch = 0;
+				maybeRefreshIp();
+				return {
+					stats:      (r && r.stats)       || {},
+					ip:         _cachedIp,
+					status:     (r && r.status)      || 'Disconnected',
+					uptime:     (r && r.uptime)      || 0,
+					cpu_pct:    (r && r.cpu_pct)     || 0,
+					cpu_temp:   (r && r.cpu_temp)    != null ? r.cpu_temp : null,
+					mem_pct:    (r && r.mem_pct)     || 0,
+					mem_used:   (r && r.mem_used)    || 0,
+					mem_total:  (r && r.mem_total)   || 0,
+					disk_pct:   (r && r.disk_pct)    || 0,
+					disk_used:  (r && r.disk_used)   || 0,
+					disk_total: (r && r.disk_total)  || 0,
+					preferred:  []
+				};
+			})
 			.catch(() => ({ stats: {}, ip: 'N/A', status: 'Disconnected',
 			                uptime: 0, cpu_pct: 0, cpu_temp: null, mem_pct: 0, mem_used: 0, mem_total: 0,
 			                disk_pct: 0, disk_used: 0, disk_total: 0, preferred: [] }));
@@ -551,17 +574,22 @@ return baseclass.extend({
 
 		if (!_pollAdded) {
 			_pollAdded = true;
-			L.Poll.add(() =>
-				fetchWithTimeout('/cgi-bin/luci/admin/tools/get_netdev_stats', 5000)
+			L.Poll.add(() => {
+				// Periodically refresh the public IP in the background (non-blocking)
+				maybeRefreshIp();
+				return fetchWithTimeout('/cgi-bin/luci/admin/tools/get_netdev_stats?fast=1', 5000)
 					.then(r => {
 						const now2 = Date.now();
 						const dt2  = Math.max(0.1, (now2 - last_time) / 1000);
 						last_time  = now2;
 
+						// Update cached IP from local WAN if we got a valid one
+						if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
+
 						if (_container && _container.isConnected) {
 							updateContainer(_container, {
 								stats:      (r && r.stats)       || {},
-								ip:         (r && r.ip)          || 'N/A',
+								ip:         _cachedIp,
 								status:     (r && r.status)      || 'Disconnected',
 								uptime:     (r && r.uptime)      || 0,
 								cpu_pct:    (r && r.cpu_pct)     || 0,
@@ -576,8 +604,8 @@ return baseclass.extend({
 							}, dt2);
 						}
 					})
-					.catch(() => {})
-			, 2);
+					.catch(() => {});
+			}, 2);
 		}
 
 		return container;
