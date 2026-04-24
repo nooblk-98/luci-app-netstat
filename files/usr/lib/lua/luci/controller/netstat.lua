@@ -78,10 +78,9 @@ function getNetdevStats()
     -- 1. Try public-IP APIs (only when not in fast mode)
     if want_public then
         local public_cmds = {
-            "curl -fsS --max-time 2 'https://api.ipify.org' 2>/dev/null",
-            "curl -fsS --max-time 2 'http://api.ipify.org' 2>/dev/null",
-            "uclient-fetch -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
-            "wget -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
+            "curl -fsS --max-time 1 'https://api.ipify.org' 2>/dev/null",
+            "curl -fsS --max-time 1 'http://api.ipify.org' 2>/dev/null",
+            "uclient-fetch -qO- --timeout=1 'https://api.ipify.org' 2>/dev/null",
         }
         for _, cmd in ipairs(public_cmds) do
             local v = read_cmd(cmd)
@@ -143,17 +142,19 @@ function getNetdevStats()
     end
 
     -- ── Memory usage ──────────────────────────────────────────────────────────
-    local mem_total, mem_available = 0, 0
+    local mem_total, mem_available, mem_free = 0, 0, 0
     local mf = io.open("/proc/meminfo", "r")
     if mf then
         for line in mf:lines() do
             local k, v = line:match("^(%S+):%s+(%d+)")
             if k == "MemTotal"     then mem_total     = tonumber(v) or 0 end
             if k == "MemAvailable" then mem_available = tonumber(v) or 0 end
-            if mem_total > 0 and mem_available > 0 then break end
+            if k == "MemFree"      then mem_free      = tonumber(v) or 0 end
         end
         mf:close()
     end
+    -- MemAvailable is present on Linux 3.14+; fall back to MemFree on older kernels
+    if mem_available == 0 and mem_free > 0 then mem_available = mem_free end
     local mem_pct = 0
     if mem_total > 0 then
         mem_pct = math.floor((mem_total - mem_available) / mem_total * 100 + 0.5)
@@ -196,8 +197,6 @@ function getNetdevStats()
                     cpu_temp = t
                 end
             end
-        else
-            break  -- zones are numbered consecutively; stop at first missing
         end
     end
 

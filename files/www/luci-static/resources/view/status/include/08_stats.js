@@ -461,7 +461,7 @@ function updateContainer(container, data, dt) {
 // ─── Cached public IP (refreshed every 60 s, not on every 2 s poll) ──────────
 let _cachedIp        = 'N/A';
 let _lastIpFetch     = 0;
-const IP_REFRESH_MS  = 60000;
+const IP_REFRESH_MS  = 300000;
 
 function maybeRefreshIp() {
 	const now = Date.now();
@@ -483,9 +483,6 @@ return baseclass.extend({
 			.then(r => {
 				// Seed the cached IP from the local WAN address on first load
 				if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
-				// Kick off a background public-IP refresh immediately
-				_lastIpFetch = 0;
-				maybeRefreshIp();
 				return {
 					stats:      (r && r.stats)       || {},
 					ip:         _cachedIp,
