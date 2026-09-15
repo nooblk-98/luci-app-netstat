@@ -58,16 +58,11 @@ function getNetdevStats()
         return line ~= "" and line or nil
     end
 
-    -- ── Preferred interface resolution ──────────────────────────────────────
-    -- The "Preferred Interface" setting may hold either a real netdev name
-    -- (e.g. "eth2", "wwan0_1") or a logical/config interface name (e.g.
-    -- "modem", "wan") that has no matching key in /proc/net/dev. In the
-    -- latter case resolve it to its actual l3_device via ubus so traffic
-    -- stats can be found.
+    -- Resolve the configured preferred interface, falling back to its
+    -- l3_device when it names a logical interface rather than a netdev.
     local prefer_iface = ""
     do
         local prefer = uci:get_first("netstats", "config", "prefer") or ""
-        -- Only allow safe characters before using it in a shell command.
         if prefer ~= "" and prefer:match("^[%w%-%._]+$") then
             if stats[prefer] then
                 prefer_iface = prefer
