@@ -1,6 +1,5 @@
 'use strict';
 'require baseclass';
-'require uci';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let prev        = {};
@@ -496,7 +495,7 @@ return baseclass.extend({
 					disk_pct:   (r && r.disk_pct)    || 0,
 					disk_used:  (r && r.disk_used)   || 0,
 					disk_total: (r && r.disk_total)  || 0,
-					preferred:  []
+					preferred:  (r && r.prefer_iface) ? [r.prefer_iface] : []
 				};
 			})
 			.catch(() => ({ stats: {}, ip: 'N/A', status: 'Disconnected',
@@ -597,7 +596,7 @@ return baseclass.extend({
 								disk_pct:   (r && r.disk_pct)    || 0,
 								disk_used:  (r && r.disk_used)   || 0,
 								disk_total: (r && r.disk_total)  || 0,
-								preferred:  []
+								preferred:  (r && r.prefer_iface) ? [r.prefer_iface] : []
 							}, dt2);
 						}
 					})
