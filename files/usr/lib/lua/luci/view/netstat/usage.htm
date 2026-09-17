@@ -93,6 +93,21 @@ local cur_iface   = http.formvalue("iface") or saved_iface or ifaces[1] or ""
 local view_mode   = http.formvalue("mode")  or saved_mode
 if view_mode ~= "daily" and view_mode ~= "monthly" then view_mode = "daily" end
 
+if not cur_iface:match("^[%w%-%._]+$") then cur_iface = "" end
+
+local function contains(list, name)
+    for _, v in ipairs(list) do if v == name then return true end end
+    return false
+end
+
+-- vnstat only reports interfaces it has been told to track; auto-register
+-- the selected interface so users don't have to hit "Reset Historical Data".
+if cur_iface ~= "" and not contains(ifaces, cur_iface) then
+    sys.call("vnstat -u -i " .. cur_iface .. " >/dev/null 2>&1")
+    table.insert(ifaces, cur_iface)
+    table.sort(ifaces)
+end
+
 local stats, title = {}, ""
 if cur_iface ~= "" then
     if view_mode == "monthly" then

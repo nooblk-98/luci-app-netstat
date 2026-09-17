@@ -504,6 +504,16 @@ return baseclass.extend({
 	},
 
 	render(data) {
+		try {
+			return this._render(data);
+		} catch (e) {
+			console.error('netstat widget failed to render:', e);
+			return E('div', { style: 'padding:20px;text-align:center;color:#999;font-size:13px' },
+				_('Netstat widget failed to load — see browser console for details.'));
+		}
+	},
+
+	_render(data) {
 		const now  = Date.now();
 		const dt   = Math.max(0.1, (now - last_time) / 1000);
 		last_time  = now;
@@ -583,21 +593,25 @@ return baseclass.extend({
 						if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
 
 						if (_container && _container.isConnected) {
-							updateContainer(_container, {
-								stats:      (r && r.stats)       || {},
-								ip:         _cachedIp,
-								status:     (r && r.status)      || 'Disconnected',
-								uptime:     (r && r.uptime)      || 0,
-								cpu_pct:    (r && r.cpu_pct)     || 0,
-								cpu_temp:   (r && r.cpu_temp)    != null ? r.cpu_temp : null,
-								mem_pct:    (r && r.mem_pct)     || 0,
-								mem_used:   (r && r.mem_used)    || 0,
-								mem_total:  (r && r.mem_total)   || 0,
-								disk_pct:   (r && r.disk_pct)    || 0,
-								disk_used:  (r && r.disk_used)   || 0,
-								disk_total: (r && r.disk_total)  || 0,
-								preferred:  (r && r.prefer_iface) ? [r.prefer_iface] : []
-							}, dt2);
+							try {
+								updateContainer(_container, {
+									stats:      (r && r.stats)       || {},
+									ip:         _cachedIp,
+									status:     (r && r.status)      || 'Disconnected',
+									uptime:     (r && r.uptime)      || 0,
+									cpu_pct:    (r && r.cpu_pct)     || 0,
+									cpu_temp:   (r && r.cpu_temp)    != null ? r.cpu_temp : null,
+									mem_pct:    (r && r.mem_pct)     || 0,
+									mem_used:   (r && r.mem_used)    || 0,
+									mem_total:  (r && r.mem_total)   || 0,
+									disk_pct:   (r && r.disk_pct)    || 0,
+									disk_used:  (r && r.disk_used)   || 0,
+									disk_total: (r && r.disk_total)  || 0,
+									preferred:  (r && r.prefer_iface) ? [r.prefer_iface] : []
+								}, dt2);
+							} catch (e) {
+								console.error('netstat widget failed to update:', e);
+							}
 						}
 					})
 					.catch(() => {});
