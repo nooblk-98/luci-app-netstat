@@ -89,7 +89,37 @@ end
 local ifaces      = get_interfaces()
 local saved_iface = uci:get("netstats", "@config[0]", "prefer") or ""
 local saved_mode  = uci:get("netstats", "@config[0]", "mode")   or "daily"
-local cur_iface   = http.formvalue("iface") or saved_iface or ifaces[1] or ""
+
+local function has_db(name)
+    for _, i in ipairs(ifaces) do if i == name then return true end end
+    return false
+end
+
+-- Accepts a vnStat netdev name (e.g. "wwan0") or a logical interface name
+-- (e.g. "wan") resolved to its l3_device. Returns nil if it has no database.
+local function resolve_iface(name)
+    if not name or name == "" or not name:match("^[%w%-%._]+$") then return nil end
+    if has_db(name) then return name end
+    local l3 = sys.exec("ubus call network.interface." .. name ..
+        " status 2>/dev/null | jsonfilter -e '@.l3_device' 2>/dev/null") or ""
+    l3 = l3:match("^%s*(.-)%s*$")
+    if l3 ~= "" and has_db(l3) then return l3 end
+    return nil
+end
+
+-- Auto detect: the default-route device is the real uplink.
+local function default_route_iface()
+    local out = sys.exec("ip route show default 2>/dev/null") or ""
+    for dev in out:gmatch("dev%s+(%S+)") do
+        if has_db(dev) then return dev end
+    end
+    return nil
+end
+
+local cur_iface   = resolve_iface(http.formvalue("iface"))
+                 or resolve_iface(saved_iface)
+                 or default_route_iface()
+                 or ifaces[1] or ""
 local view_mode   = http.formvalue("mode")  or saved_mode
 if view_mode ~= "daily" and view_mode ~= "monthly" then view_mode = "daily" end
 
