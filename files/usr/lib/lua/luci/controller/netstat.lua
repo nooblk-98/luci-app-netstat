@@ -66,6 +66,7 @@ function getNetdevStats()
     end
 
     local ip = "N/A"
+    local ip_source = "none"
 
     -- Determine whether the caller wants a public IP (slow, requires network)
     -- or just the fast local WAN address.  The JS frontend sends ?fast=1 for
@@ -75,20 +76,20 @@ function getNetdevStats()
     -- 1. Try public-IP APIs (only when not in fast mode)
     if want_public then
         local public_cmds = {
-            "curl -fsS --max-time 1 'https://api.ipify.org' 2>/dev/null",
-            "curl -fsS --max-time 1 'http://api.ipify.org' 2>/dev/null",
-            "uclient-fetch -qO- --timeout=1 'https://api.ipify.org' 2>/dev/null",
+            "curl -fsS --max-time 2 'https://api.ipify.org' 2>/dev/null",
+            "curl -fsS --max-time 2 'http://api.ipify.org' 2>/dev/null",
+            "uclient-fetch -qO- --timeout=2 'https://api.ipify.org' 2>/dev/null",
         }
         for _, cmd in ipairs(public_cmds) do
             local v = read_cmd(cmd)
-            if is_valid_ip(v) then ip = v; break end
+            if is_valid_ip(v) then ip = v; ip_source = "public"; break end
         end
     end
 
     -- 2. Fall back to the local address of the tracked device
     if ip == "N/A" and prefer_iface ~= "" then
         local v = nsu.device_ipaddr(prefer_iface)
-        if is_valid_ip(v) then ip = v end
+        if is_valid_ip(v) then ip = v; ip_source = "local" end
     end
 
     -- ── vnStat totals (only with the vnStat backend) ────────────────────────
@@ -196,7 +197,8 @@ function getNetdevStats()
     end
 
     luci.http.prepare_content("application/json")
-    luci.http.write_json({ stats = stats, ip = ip, status = status,
+    luci.http.write_json({ stats = stats, ip = ip, ip_source = ip_source,
+                           status = status,
                            prefer_iface = prefer_iface,
                            vnstat_total = vnstat_total,
                            uptime      = uptime_sec,

@@ -491,18 +491,34 @@ function updateContainer(container, data, dt) {
 	return true;
 }
 
-// ─── Cached public IP (refreshed every 60 s, not on every 2 s poll) ──────────
-let _cachedIp        = 'N/A';
+// ─── Cached public IP (refreshed every 5 min, not on every 2 s poll) ─────────
+// The public IP (as seen through any proxy such as Passwall) is shown once
+// known; the tracked device's local address is only a fallback until then,
+// so the 2 s fast polls must never overwrite it.
+let _publicIp        = null;
+let _localIp         = 'N/A';
 let _lastIpFetch     = 0;
 const IP_REFRESH_MS  = 300000;
+const IP_RETRY_MS    = 30000;
+
+function shownIp() {
+	return _publicIp || _localIp;
+}
+
+function noteLocalIp(r) {
+	if (r && r.ip && r.ip !== 'N/A') _localIp = r.ip;
+}
 
 function maybeRefreshIp() {
 	const now = Date.now();
-	if (now - _lastIpFetch < IP_REFRESH_MS) return;
+	if (now - _lastIpFetch < (_publicIp ? IP_REFRESH_MS : IP_RETRY_MS)) return;
 	_lastIpFetch = now;
 	// Full fetch (no ?fast=1) to get public IP; update cache on success
 	fetchWithTimeout(STATS_URL, 8000)
-		.then(r => { if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip; })
+		.then(r => {
+			if (r && r.ip_source === 'public' && r.ip && r.ip !== 'N/A')
+				_publicIp = r.ip;
+		})
 		.catch(() => {});
 }
 
@@ -514,9 +530,9 @@ return baseclass.extend({
 		// Use ?fast=1 to skip slow public-IP APIs — response is near-instant
 		return fetchWithTimeout(STATS_URL + '?fast=1', 5000)
 			.then(r => {
-				// Seed the cached IP from the local WAN address on first load
-				if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
-				return toData(r, _cachedIp);
+				// Show the local WAN address until the public IP arrives
+				noteLocalIp(r);
+				return toData(r, shownIp());
 			})
 			.catch(() => toData(null, 'N/A'));
 	},
@@ -598,11 +614,11 @@ return baseclass.extend({
 						const dt2  = Math.max(0.1, (now2 - last_time) / 1000);
 						last_time  = now2;
 
-						// Update cached IP from local WAN if we got a valid one
-						if (r && r.ip && r.ip !== 'N/A') _cachedIp = r.ip;
+						// Keep the local address current as a fallback only
+						noteLocalIp(r);
 
 						if (_container && _container.isConnected) {
-							updateContainer(_container, toData(r, _cachedIp), dt2);
+							updateContainer(_container, toData(r, shownIp()), dt2);
 						}
 					})
 					.catch(() => {});
