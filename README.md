@@ -18,7 +18,9 @@
 
 
 
-**luci-app-netstat** is a modern, feature-rich LuCI application that provides comprehensive network traffic statistics and monitoring for OpenWrt routers. It leverages `vnstat` for accurate traffic monitoring and presents the data through an intuitive web interface.
+**luci-app-netstat** is a modern, feature-rich LuCI application that provides comprehensive network traffic statistics and monitoring for OpenWrt routers. Traffic history comes from **vnStat 2** (`vnstat2` package, read through `vnstat --json`), and live rates come from the kernel counters in `/proc/net/dev`.
+
+It works on any OpenWrt router: there are no hard-coded interface names, device paths or board-specific files. The uplink is found from the default route, and vnStat is set up to track the router's interfaces automatically.
 
 The application offers real-time network statistics, historical data visualization, and detailed traffic analysis to help you understand your network usage patterns.
 
@@ -35,8 +37,8 @@ The application offers real-time network statistics, historical data visualizati
 
 ## Requirements
 
-- OpenWrt with LuCI installed
-- `vnstat` package (required dependency)
+- OpenWrt with LuCI installed (`luci-compat` is pulled in automatically)
+- **`vnstat2`** (vnStat 2.x) — required, installed automatically as a package dependency. The old vnStat 1.x `vnstat` package is no longer supported.
 - Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ## Installation
@@ -61,40 +63,47 @@ make
 3. Install via SSH:
    ```bash
    ssh root@<router-ip>
+   opkg install vnstat2
    opkg install /tmp/luci-app-netstat_*.ipk
    ```
-4. Navigate to **LuCI Web Interface** → **Status** → **Network Statistics**
+   (On OpenWrt 25.x use `apk add` with the `.apk` package instead.)
+4. The live widget appears on **Status** → **Overview**; history and settings are under **Tools** → **Netstat**
 
 ## Configuration
 
 ### UCI Configuration
 
-The application configuration is managed via UCI. Edit `/etc/config/netstats` to customize:
+Settings live in `/etc/config/netstats` and can be changed on the **Settings** tab:
 
 ```
-config netstat
-    option enabled '1'
-    option interface 'wan'
-    option update_interval '60'
+config config
+    option prefer ''            # '' = auto (default-route device), or a device (eth1) / logical interface (wan)
+    option backend 'normal'     # 'normal' = since-boot totals, 'vnstat' = this month's totals from vnStat
+    option mode 'daily'         # default Network Usage view: 'daily' or 'monthly'
+    option vnstat_autoadd '1'   # '0' stops the app from adding interfaces to vnStat
 ```
 
-### vnstat Integration
+### How interfaces are found
 
-Ensure vnstat is properly configured and running:
+- **Live widget:** the `prefer` setting if it resolves, otherwise the device that holds the default route (read from `/proc/net/route` and `/proc/net/ipv6_route`). Logical names such as `wan` are resolved to their device through `ubus call network.interface.<name> status`.
+- **Network Usage tab:** the same choice, limited to interfaces in the vnStat database (`vnstat --dbiflist 1`).
+- **vnStat tracking:** OpenWrt's `vnstat2` starts `vnstatd` with `--noadd`, so it only tracks the interfaces listed in `/etc/config/vnstat`. This app adds them for you:
+  - `/etc/hotplug.d/iface/90-netstat-vnstat` adds each interface's device to that list when it comes up (WAN, LAN, LTE modem, PPPoE, VPN, ...);
+  - `/etc/uci-defaults/50_luci-netstat` does the same once at install time for interfaces that are already up;
+  - you can run `/usr/libexec/netstat-vnstat-track` by hand at any time.
 
-```bash
-opkg install vnstat
-service vnstat start
-service vnstat enable
-```
+### vnStat notes
+
+- vnStat writes to its database every few minutes (`SaveInterval`, 5 by default), so a newly added interface shows "No data available" for a short while.
+- OpenWrt's default database location is `/var/lib/vnstat`, which is in RAM, so **history is lost on reboot**. To keep it, set `DatabaseDir` in `/etc/vnstat.conf` to persistent storage (e.g. a USB disk or `/etc/vnstat` if you accept the flash writes) and run `service vnstat restart`. The Settings tab shows the current location.
 
 ## Usage
 
 ### Dashboard
 
 1. Log into your OpenWrt LuCI web interface
-2. Navigate to **Status** → **Network Statistics**
-3. View traffic statistics for your network interfaces
+2. **Status** → **Overview** shows live download/upload rates, totals, IP and system info
+3. **Tools** → **Netstat** shows daily or monthly history from vnStat
 
 ### Available Data
 
