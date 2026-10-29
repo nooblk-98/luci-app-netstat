@@ -85,7 +85,7 @@ if active_tab == "settings" then
         if tracked == "" then tracked = translate("none yet") end
 
         local html = string.format(
-            '<span style="font-size:12px;color:#6b7280;">%s %s%s<br>%s %s</span>',
+            '<span style="font-size:12px;opacity:0.75;">%s %s%s<br>%s %s</span>',
             translate("Location:"), dir, db_size,
             translate("Tracked interfaces:"), tracked
         )

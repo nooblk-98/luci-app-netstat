@@ -31,7 +31,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
 <link rel="stylesheet" href="/luci-static/resources/netstat/netstat-usage.css" />
 
 <div class="netstat-dashboard">
-    <p style="margin:0 0 12px;font-size:13px;color:#6b7280;">
+    <p class="netstat-intro">
         <%:Usage is displayed using the Interface and View Mode selected in the Settings tab.%>
     </p>
 
@@ -57,7 +57,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
 
     <div class="netstat-chart-wrap">
         <div class="netstat-chart-header">
-            <h3 class="netstat-chart-title"><%=title%> <%:Usage%></h3>
+            <span class="netstat-chart-title"><%=title%> <%:Usage%></span>
             <span class="netstat-chart-badge"><%=cur_iface%></span>
         </div>
         <canvas id="trafficChart" class="netstat-chart-canvas"></canvas>
@@ -77,9 +77,14 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
     <script src="/luci-static/resources/netstat/vnstat-parse.js"></script>
     <script>
     (function () {
-        var isDark    = window._netstatDark || false;
-        var textColor = isDark ? '#f3f4f6' : '#1f2937';
-        var gridColor = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+        // Chart text follows the theme's own text colour, so it is readable
+        // on light and dark themes alike; grid lines are translucent grey.
+        var dashboard = document.querySelector('.netstat-dashboard');
+        function themeTextColor() {
+            return getComputedStyle(dashboard).color || '#888';
+        }
+        var textColor = themeTextColor();
+        var gridColor = 'rgba(128,128,128,0.2)';
 
         var usage = window.netstatVnstat.series(<%=raw_js%>, '<%=cur_iface%>', '<%=view_mode%>');
         if (!usage.entries) {
@@ -120,7 +125,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
 
         var maxVal = Math.max.apply(null, rxData.concat(txData).concat([1]));
 
-        new Chart(ctx, {
+        var chart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -199,6 +204,27 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
             },
             plugins: [ChartDataLabels]
         });
+
+        // Recolour when the theme switches between light and dark without a
+        // page reload (themes toggle a class or inline style on <html>/<body>).
+        function recolour() {
+            var c = themeTextColor();
+            if (c === textColor) return;
+            textColor = c;
+            chart.options.plugins.legend.labels.color = c;
+            chart.options.scales.x.ticks.color = c;
+            chart.options.scales.y.ticks.color = c;
+            chart.data.datasets[1].datalabels.color = c;
+            chart.update('none');
+        }
+        if (window.MutationObserver) {
+            var mo = new MutationObserver(function () { setTimeout(recolour, 50); });
+            [document.documentElement, document.body].forEach(function (el) {
+                mo.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-darkmode'] });
+            });
+            var darkStyle = document.getElementById('dark-theme-style');
+            if (darkStyle) mo.observe(darkStyle, { childList: true, characterData: true, subtree: true });
+        }
     })();
     </script>
 
