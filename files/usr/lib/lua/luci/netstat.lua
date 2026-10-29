@@ -117,17 +117,18 @@ local function accept(dev, known)
     return M.netdev_exists(dev) and dev or nil
 end
 
--- Accepts a netdev name ("eth1", "wwan0") or a logical netifd interface name
--- ("wan", "modem") and returns the matching netdev, or nil.
+-- Accepts a logical netifd interface name ("wan", "modem") or a netdev name
+-- ("eth1", "wwan0") and returns the matching netdev, or nil. Logical names
+-- win: on DSA routers the WAN port netdev is often also called "wan", but
+-- the logical interface's L3 device (e.g. pppoe-wan) is the real uplink.
 function M.resolve_device(name, known)
     if not M.safe_name(name) then return nil end
-    local dev = accept(name, known)
-    if dev then return dev end
     local st = util.ubus("network.interface." .. name, "status", {})
     if type(st) == "table" then
-        return accept(st.l3_device, known) or accept(st.device, known)
+        local dev = accept(st.l3_device, known) or accept(st.device, known)
+        if dev then return dev end
     end
-    return nil
+    return accept(name, known)
 end
 
 function M.preferred_name()
