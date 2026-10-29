@@ -60,7 +60,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
             <span class="netstat-chart-title"><%=title%> <%:Usage%></span>
             <span class="netstat-chart-badge"><%=cur_iface%></span>
         </div>
-        <canvas id="trafficChart" class="netstat-chart-canvas"></canvas>
+        <div class="netstat-chart-box"><canvas id="trafficChart"></canvas></div>
     </div>
     </div>
 
@@ -97,15 +97,20 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
         var rxData = usage.rx;
         var txData = usage.tx;
 
+        // Height follows the number of rows; width follows the container
+        // (Chart.js responsive mode), so the chart never overflows when the
+        // theme's sidebar appears or the window is resized.
         var BAR_H  = 48;
         var canvas = document.getElementById('trafficChart');
-        canvas.height = Math.min(Math.max(labels.length * BAR_H, 280), 700);
-        canvas.width  = canvas.offsetWidth || canvas.parentElement.clientWidth;
+        canvas.parentElement.style.height =
+            Math.min(Math.max(labels.length * BAR_H, 280), 700) + 'px';
 
         var ctx = canvas.getContext('2d');
 
-        function rxGradient() {
-            var g = ctx.createLinearGradient(0, 0, canvas.width || 600, 0);
+        function rxGradient(c) {
+            var area = c.chart.chartArea;
+            if (!area) return '#4ade80';
+            var g = c.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
             g.addColorStop(0, '#86efac');
             g.addColorStop(1, '#15803d');
             return g;
@@ -133,7 +138,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
                     {
                         label: '<%:Download (RX)%>',
                         data: rxData,
-                        backgroundColor: rxData.map(function() { return rxGradient(); }),
+                        backgroundColor: rxGradient,
                         borderRadius: 4,
                         borderSkipped: false,
                         datalabels: {
@@ -168,7 +173,7 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
             },
             options: {
                 indexAxis: 'y',
-                responsive: false,
+                responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 400 },
                 plugins: {
@@ -217,8 +222,18 @@ local raw_js = (jsonc.stringify(raw) or '""'):gsub("</", "<\\/")
             chart.data.datasets[1].datalabels.color = c;
             chart.update('none');
         }
+        // Themes may animate the colour change (e.g. "transition: all 0.2s"),
+        // so check again once it has settled and whenever a colour
+        // transition finishes.
+        function recolourSoon() {
+            setTimeout(recolour, 50);
+            setTimeout(recolour, 500);
+        }
+        document.addEventListener('transitionend', function (ev) {
+            if (ev.propertyName === 'color') recolour();
+        });
         if (window.MutationObserver) {
-            var mo = new MutationObserver(function () { setTimeout(recolour, 50); });
+            var mo = new MutationObserver(recolourSoon);
             [document.documentElement, document.body].forEach(function (el) {
                 mo.observe(el, { attributes: true, attributeFilter: ['class', 'style', 'data-theme', 'data-darkmode'] });
             });

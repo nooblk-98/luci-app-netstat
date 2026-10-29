@@ -70,9 +70,10 @@
 .netstat-chart-badge::before { content: "("; }
 .netstat-chart-badge::after  { content: ")"; }
 
-.netstat-chart-canvas {
+.netstat-chart-box {
+    position: relative;
     width: 100%;
-    display: block;
+    min-width: 0;
 }
 
 .netstat-empty {
