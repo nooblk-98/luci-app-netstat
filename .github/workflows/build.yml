@@ -28,7 +28,10 @@ jobs:
 
   build:
     name: Build ${{ matrix.label }}
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest is 26.04, whose default coreutils are the Rust
+    # uutils. The 24.10 SDK's prerequisite check requires GNU 'install' and
+    # fails there before building anything.
+    runs-on: ubuntu-24.04
     needs: meta
     strategy:
       fail-fast: false
